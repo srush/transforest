@@ -1,0 +1,72 @@
+digraph Forest {
+start [style="invis"]
+n1 [label="1: PRP [0-1]\n i" color=brown style=filled]
+n1 -> start [color="white" weight=100];
+n2 [label="2: VBD [1-2]\n saw" color=green style=filled]
+n2 -> start [color="white" weight=100];
+n3 [label="3: PRP [2-3]\n him" color=magenta style=filled]
+n3 -> start [color="white" weight=100];
+n4 [label="4: IN [3-4]\n with" color=red style=filled]
+n4 -> start [color="white" weight=100];
+n5 [label="5: DT [4-5]\n a" color=orange style=filled]
+n5 -> start [color="white" weight=100];
+n6 [label="6: NN [5-6]\n mirror" color=gray style=filled]
+n6 -> start [color="white" weight=100];
+n7 [label="7: NP [0-1]\n i"  color=black style=bold  ]
+n8 [label="8: NP [2-3]\n him"  color=black style=bold  ]
+n9 [label="9: NP [4-6]\n a .. mirror"  color=black style=bold  ]
+n10 [label="10: PP [3-6]\n with .. mirror"  color=black style=bold  ]
+n11 [label="11: NP [2-6]\n him .. mirror"  color=red]
+n12 [label="12: VP [1-6]\n saw .. mirror"  color=black style=bold]
+n13 [label="13: S [0-6]\n i .. mirror"  color=black style=bold]
+n1 -> n2 [color="white" weight=10 minlen=0];
+n2 -> n3 [color="white" weight=10 minlen=0];
+n3 -> n4 [color="white" weight=50000 minlen=0];
+n4 -> n5 [color="white" weight=500 minlen=0];
+n5 -> n6 [color="white" weight=10 minlen=0];
+
+{ rank = same; n1 n2 n11 };
+
+{ rank = same; n3 n9 };
+
+{ rank = same; n4 n5 n6 };
+
+{ rank = same; n11 };
+{ rank = same; n7 };
+{ rank = same; n12 };
+{ rank = same; n13 };
+{ rank = same; n9 };
+{ rank = same; n10 };
+{ rank = same; n8 };
+e7_0 [color=black label="" width=0 height=0];
+n7 -> e7_0 [label="0.00" dir=back style=bold width=2 weight=200 color=black];
+e7_0 -> n1 [arrowhead=none style=bold width=2 weight=200 color=black];
+e8_0 [color=black label="" width=0 height=0];
+n8 -> e8_0 [label="0.00" dir=back style=bold width=2 weight=200 color=black];
+e8_0 -> n3 [arrowhead=none style=bold width=2 weight=200 color=black];
+e9_0 [color=black label="" width=0 height=0];
+n9 -> e9_0 [label="0.00" dir=back style=bold width=2 weight=200 color=black];
+e9_0 -> n5 [arrowhead=none style=bold width=2 weight=200 color=black];
+e9_0 -> n6 [arrowhead=none style=bold width=2 weight=200 color=black];
+e10_0 [color=black label="" width=0 height=0];
+n10 -> e10_0 [label="0.00" dir=back style=bold width=2 weight=200 color=black];
+e10_0 -> n4 [arrowhead=none style=bold width=2 weight=200 color=black];
+e10_0 -> n9 [arrowhead=none style=bold width=2 weight=200 color=black];
+e11_0 [color=gray label="" width=0 height=0];
+n11 -> e11_0 [label="0.00" dir=back  color=gray];
+e11_0 -> n8 [arrowhead=none  color=gray];
+e11_0 -> n10 [arrowhead=none  color=gray];
+e12_0 [color=black label="" width=0 height=0];
+n12 -> e12_0 [label="0.00" dir=back style=bold width=2 weight=200 color=black];
+e12_0 -> n2 [arrowhead=none style=bold width=2 weight=200 color=black];
+e12_0 -> n8 [arrowhead=none style=bold width=2 weight=200 color=black];
+e12_0 -> n10 [arrowhead=none style=bold width=2 weight=200 color=black];
+e12_1 [color=green label="" width=0 height=0];
+n12 -> e12_1 [label="1.00" dir=back  color=green];
+e12_1 -> n2 [arrowhead=none  color=green];
+e12_1 -> n11 [arrowhead=none  color=green];
+e13_0 [color=black label="" width=0 height=0];
+n13 -> e13_0 [label="0.00" dir=back style=bold width=2 weight=200 color=black];
+e13_0 -> n7 [arrowhead=none style=bold width=2 weight=200 color=black];
+e13_0 -> n12 [arrowhead=none style=bold width=2 weight=200 color=black];
+}

@@ -1,0 +1,23 @@
+-55.2373
+(S (NP (PRP I)) (VP (VBD saw) (NP (PRP him)) (PP (IN with) (NP (DT a) (NN mirror)))) (. .))
+-61.1127
+(S (NP (PRP I)) (VP (VBD saw) (S (NP (PRP him)) (PP (IN with) (NP (DT a) (NN mirror))))) (. .))
+-62.2706
+(S (NP (PRP I)) (VP (VBD saw) (NP (NP (PRP him)) (PP (IN with) (NP (DT a) (NN mirror))))) (. .))
+-65.8867
+(S (NP (PRP I)) (VP (VBD saw) (NP (PRP him)) (PP (IN with) (S (NP (DT a) (NN mirror))))) (. .))
+-66.5520
+(S (NP (PRP I)) (VP (VBD saw) (NP (PRP him)) (SBAR (IN with) (S (NP (DT a) (NN mirror))))) (. .))
+-70.9844
+(S (NP (PRP I)) (VP (VBD saw) (NP (PRP him)) (PP (IN with) (NP (DT a) (VB mirror)))) (. .))
+-71.0004
+(S (NP (PRP I)) (VP (VBD saw) (S (NP (PRP him)) (PP (IN with) (S (NP (DT a) (NN mirror)))))) (. .))
+-71.5104
+(S (NP (PRP I)) (VP (VBD saw) (NP (PRP him)) (PP (IN with) (NP (NP (DT a)) (NN mirror)))) (. .))
+-72.4603
+(S (NP (NN I)) (VP (VBD saw) (NP (PRP him)) (PP (IN with) (NP (DT a) (NN mirror)))) (. .))
+-73.8379
+(S (NP (PRP I)) (VP (VBD saw) (S (NP (NP (PRP him)) (PP (IN with) (NP (DT a) (NN mirror)))))) (. .))
+
+
+(TOP (S (ADVP (RB no)) (, ,) (NP (PRP it)) (VP (VBD was) (RB n't) (NP (JJ black) (NNP monday))) (. .)))

@@ -1,0 +1,32 @@
+D/olddesign////
+D/scripts////
+/ttt/1.1/Wed Apr  4 00:49:24 2007//
+/ttt2/1.1/Wed Apr  4 00:50:36 2007//
+/README/1.2/Sun Dec  2 09:09:45 2007//
+/addgold.py/1.1/Fri Dec  7 09:52:08 2007//
+/cleangold.py/1.1/Mon Nov 12 09:46:10 2007//
+/cmp_kbest.py/1.1/Mon Nov 26 09:04:58 2007//
+/decoder.py/1.1/Fri Dec 21 09:36:15 2007//
+/dumpdot.py/1.1/Thu Dec 20 07:26:55 2007//
+/extract_features_nbest.py/1.1/Wed Nov 28 06:45:15 2007//
+/features.py/1.7/Mon Dec 17 15:06:10 2007//
+/filter_by_length.py/1.1/Mon Nov 12 08:29:06 2007//
+/forest.py/1.2/Fri Dec 21 09:42:32 2007//
+/fvector.py/1.1/Thu Dec 20 16:30:55 2007//
+/heads.py/1.2/Sat Dec 15 09:57:29 2007//
+/local_feat.py/1.1/Fri Dec 21 09:55:03 2007//
+/loglinear.py/1.1/Fri Nov  9 11:33:25 2007//
+/makefolds.py/1.1/Thu Dec 20 14:39:58 2007//
+/nbest_oracle.py/1.1/Mon Dec 10 08:04:53 2007//
+/node_and_hyperedge.py/1.1/Fri Dec 21 08:35:37 2007//
+/oracle.py/1.1/Fri Dec 21 09:23:30 2007//
+/parseval.py/1.1/Thu Dec 20 14:44:27 2007//
+/perceptron.py/1.1/Fri Dec 21 09:31:23 2007//
+/readkbest.py/1.7/Thu Dec 20 16:28:12 2007//
+/relative.py/1.1/Thu Dec 20 18:28:19 2007//
+/remove_sp.py/1.1/Sun Dec 16 10:52:58 2007//
+/sep_kbest.py/1.1/Tue Nov 27 14:40:04 2007//
+/split.py/1.1/Thu Nov 29 10:04:48 2007//
+/tmp/1.2/Tue Dec 18 09:32:05 2007//
+/tree.py/1.7/Fri Dec 21 08:41:13 2007//
+/utility.py/1.5/Mon Dec 10 08:54:13 2007//

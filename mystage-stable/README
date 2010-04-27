@@ -1,0 +1,58 @@
+
+programs that dump forests to output take only one forest a time. programs that only output stuff can take multiple forests at a time
+	
+
+multiple forest programs
+
+				main args		output (examples)				
+------------------------------------------------------------------------------------
+forest.py		-k5	--inf		k-best trees (can be \inf-best with threshold)			
+oracle.py						forest oracle		
+
+perceptron.py	-T1				weights
+
+
+single-forest programs
+--------------------------------------------------------------------------------------
+relative.py		-p10			smaller forest		
+local_feat.py	<fclasses>		annotated forest	
+dumpdot.py						.dot format: cat 1.forest | dumpdot.py | viewdot.sh
+
+
+non-forest-based programs:
+------------------------------------------------
+features.py
+readkbest.py
+nbest_oracle.py	--
+
+
+
+my python programs that reads in the forest (from txt file) and extract features
+
+features.py		definition of features (after Johnson's spfeatures.h)
+				
+readkbest.py	compute features on kbest list  
+		
+				cat 1.50best | ../../mystage/readkbest.py -k10 word	rule-1   
+				(note 1.50best is in 02train dir)
+				question: what's johnson's debug tool? and i did compare them			
+				
+				cat 1.50best | ../../second-stage/programs/features/best-parses -m 0 rule-1
+
+				note: hacked by me for mode 0. actually should write my own mode 4
+
+				output stuff like 
+					379741:2	
+				meaning feature id 379741 appears 2 times in this parse-tree. to lookup the feature:
+					id2feature modes/f-word "378218:1        379669:1"
+
+forest.py		forest manipulations (readin, prune, kbest, oracle, ...)
+				
+tree.py			tree class
+
+--------
+
+useful scripts:
+
+scripts/subset		extract a subset of features and weights (say anote.txt)
+scripts/id2feature	mapping feature ids to feature

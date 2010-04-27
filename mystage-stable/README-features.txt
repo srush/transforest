@@ -1,0 +1,278 @@
+A Description of Features used in Huang (2008).
+-----------------------------------------------
+
+I	Introduction
+II	Collins Features
+
+(to be continued)
+
+-----------------------------------------------
+
+I Introduction
+
+
+The feature set used in the experiments reported in Huang (2008) includes 
+15 feature templates from Charniak and Johnson (2005) and Collins (2000), 
+which are divided into local and non-local groups:
+
+Local Templates:
+--------------------
+Rule^		 10851
+Word		 20328
+WordEdges	454101
+CoLenPar	    22
+
+Bigram*		 10292
+Trigram*	 24677
+HeadMod*	 12047
+DistMod*	 16017
+--------------------
+
+Non-Local Templates:
+--------------------
+ParentRule^	 18019
+WProj		 27417
+Heads		 70013
+HeadTree	 67836
+Heavy		  1401
+NGramTree^^	 67559
+
+RightBranch**    2
+--------------------
+
+Total: 	    800582
+
+Notes:
+
+* Collins features (63033 instances, 8% of total). see (Collins and Koo, 2003).
+^ Rule and ParentRule are special cases of "Rule" in Charniak and Johnson.
+^^ Only bigram instances are included.
+** Global features
+
+-----------------------------------------------
+
+II Collins Features
+
+
+These are local feature templates taken from Collins and Koo (2003) as a
+simplification of the "NGram" class in Charniak and Johnson (2005).
+The major differences from C&J's NGram are:
+
+* simplifications:
+1) we never consider root context (*ROOT*).
+2) we never consider conjunctions (*CONJ* and *LASTCONJ*).
+3) we never lexicalize nonterminals (in order to be local). The original
+   Collins set does include lexicalized versions as well.
+
+* additions:
+1) following Collins, we also consider non-adjacent relations (HeadMod and DistMod), 
+   whereas NGram instances are always contiguous sequences. 
+2) unlike Collins, we use both syntactic and semantic heads, whereas NGram just uses 
+   the former. Exception: our Trigram template only uses syntactic heads (see below).
+
+Collins set also includes Parent-annotated versions (two-level bigram, etc.),
+but we again did not use this variant, just to keep the features local. 
+C&J's NGram code also has this option implemented (<nanccats>), but in practice 
+never used it.
+
+
+Example: a hyperedge with VBD as the (syntactic) head:
+
+	VP[1-15] -> PP[1-4] VBD[4-5] NP[5-9] SBAR[9-15]
+
+1. Bigram
+
+	outputs bigrams from the head leftwards, and from the head rightwards.
+	In both cases, the head itself is *not* included. "_" denotes left/right
+	boundaries (*STOP* sign in Collins).
+	
+	Bigram:0:0:1 (VP *LEFT* PP _)    Bigram:0:0:1 (VP *RIGHT* NP SBAR)   
+	Bigram:0:0:1 (VP *RIGHT* SBAR _)	
+
+	Note: the first two bits "0:0" are constant (no parent NT, no lex.). 
+		  the last bit can be either "1" for syntactic head, or "1" for semantic.
+
+2. Trigram
+
+   	simply outputs sequences of trigram NTs, with "!" denoting the head. 
+	Unlike Bigram, the order here is always from left to right.
+	Note this class only uses syntactic heads, since this case alone 
+	results in twice as many instances as the other three classes with 
+	both types of heas. 
+
+	Trigram:0:1 (VP _ PP VBD!)    	Trigram:0:1 (VP PP VBD! NP)   
+	Trigram:0:1 (VP VBD! NP SBAR)	Trigram:0:1 (VP NP SBAR _)
+ 
+3. HeadMod
+	
+	outputs the head-modifier bigram, with directional and adjacency tags.	
+
+	HeadMod:0:0:1 (VP *LEFT* VBD PP *ADJ*) 	
+	HeadMod:0:0:1 (VP *RIGHT* VBD NP *ADJ*) 
+	HeadMod:0:0:1 (VP *RIGHT* VBD SBAR *NONADJ*)	  # non-adjacent
+
+   	Note: the last bit can be 1 or 0 (syn/sem), like in Bigram.
+
+4. DistMod
+
+	is like HeadMod, but outputs "distance" instead of direction. Distance is
+	the # of words between the head constituent and the modifer constituent.
+  
+	DistMod:0:0:1 (VP VBD PP 0) 	DistMod:0:0:1 (VP VBD NP 0) 
+	DistMod:0:0:1 (VP VBD SBAR 3) 
+
+	Note: the distances are absolute (undirected), and are quantized to 5 groups 
+		  (0, 1, 2, 3: 3-4, 5: >=5). For example, the distance in the last instance
+		  is actually 9-5=4 words, but is quantized to 3. 
+		  Again, the last parameter can be 1 or 0 (syn/sem).
+
+
+Implementation notes: both HeadMod and DistMod are subclasses of Bigram.
+
+------------------------------------------------------------------------
+
+Appendix: Python code for Collins Features.
+
+#####################################################
+
+# collins style features
+#
+# Bigram, Trigram, HeadMod, and DistMod from (Collins and Koo, 2003)
+# 
+#####################################################
+
+class Bigram(Feature):
+	''' This feature will be inherited by HeadMod and DistMod,
+	    all of which are two-body relations involving heads.
+	'''
+
+	def __init__(self, grandparent=0, lex=0, htype=heads.SYN, name="Bigram"):
+		'''grandparent = 0: nothing, 1: NT, 2: rule.
+		   rule           VP -> PP VBD NP SBAR
+	       will produce  (VP *LEFT* PP _)    (VP *RIGHT* NP SBAR)   (VP *RIGHT* SBAR _)	
+		'''
+		
+		self._str = ["%s:%d:%d:%d" % (name, grandparent, lex, htype)]
+		self._locality = Feature.EDGELOCAL if (lex == 0 and grandparent == 0) else Feature.NONLOCAL
+		self.grandparent = grandparent
+		self.lex = lex
+		self.htype = htype
+
+	def make(self, direction, tree, sub, other, adj=0):
+		'''to be overridden by subclasses'''
+		
+		mark = Feature.dir_markers[direction]
+		other_label = Feature.get_label(other)
+		return self.onecount("(%s %s %s %s)" % (tree.label, mark, sub.label, other_label))		
+
+	def dostuff(self, direction, a, tree, subs, head, i):
+		'''to be overriden by subclasses'''
+		
+		sub = subs[i]
+		other = subs[i-1] if direction == Feature.LEFT else subs[i+1]
+		a.append(self.make(direction, tree, sub, other))
+
+	def extract(self, tree, sentence):
+		if tree.is_terminal() or len(tree.subs) == 1:
+			return []
+
+		head = tree.get_headchild(self.htype)
+
+		a = []
+		## left
+		subs = tree.subs[:] + [None]  ## so that -1 and n will be defined, automatically
+
+		direction = Feature.LEFT
+		for i, sub in enumerate(tree.subs):
+			if sub is head:
+				## turns the around way around :P
+				direction = Feature.RIGHT
+			else:
+				self.dostuff(direction, a, tree, subs, head, i)
+
+		return a
+
+
+class Trigram(Feature):
+
+	def __init__(self, lex=0, htype=heads.SYN):
+		'''rule           VP -> PP VBD NP SBAR
+	       will produce  (VP _ PP VBD!)    (VP PP VBD! NP)   (VP VBD! NP SBAR)	 (VP NP SBAR _)
+		'''
+		
+		self._str = ["Trigram:%d:%d" % (lex, htype)]
+		self._locality = Feature.EDGELOCAL if (lex == 0) else Feature.NONLOCAL
+		self.lex = lex
+		self.htype = htype
+
+	def make(self, tree, sub, prev, next, head):
+		labels = map(lambda x: Feature.get_label_head(x, head), [prev, sub, next])
+		return self.onecount("(%s %s)" % (tree.label, " ".join(labels)))
+
+	def extract(self, tree, sentence):
+		if tree.is_terminal():  ## even unary rules do
+			return []
+
+		head = tree.get_headchild(self.htype)
+		a = []
+		## left
+		subs = tree.subs[:] + [None]  ## so that -1 and n will be defined, automatically
+
+		direction = Feature.LEFT
+		for i, sub in enumerate(tree.subs):
+			prev, next = subs[i-1], subs[i+1]
+			a.append(self.make(tree, sub, prev, next, head))
+
+		return a
+
+
+class HeadMod(Bigram):
+
+	def __init__(self, grandparent=0, lex=0, htype=heads.SYN):
+		'''grandparent = 0: nothing, 1: NT.
+		   rule           VP -> PP VBD NP SBAR
+	       will produce  (VP *LEFT* VBD PP *ADJ*) (VP *RIGHT* VBD NP *ADJ*) (VP *RIGHT* VBD SBAR *NONADJ*)	
+		'''
+
+		Bigram.__init__(self, grandparent, lex, htype, name="HeadMod")
+
+	def make(self, direction, tree, sub, other, adj):
+		mark = Feature.dir_markers[direction]
+		other_label = Feature.get_label(other)
+		adj_mark = Feature.adj_markers[adj]
+		return self.onecount("(%s %s %s %s %s)" % (tree.label, mark, sub.label, other_label, adj_mark))		
+
+	def dostuff(self, direction, a, tree, subs, head, i):
+		'''to be overriden by subclasses'''
+		
+		sub = subs[i]
+		adj = head is subs[i-1] or head is subs[i+1]
+		a.append(self.make(direction, tree, head, sub, adj))
+
+
+class DistMod(Bigram):
+
+	def __init__(self, grandparent=0, lex=0, htype=heads.SYN):
+		'''grandparent = 0: nothing, 1: NT.
+	       N.B. simpler than Collins: distance will be quantized absolute dist. (0, 1, 2, 3-4, >=5)
+		   rule           VP -> PP[1-4] VBD[4-5] NP[5-6] SBAR[6-15] .[15-16]
+	       will produce  (VP VBD PP 0) (VP VBD NP 0) (VP VBD SBAR 1) (VP VBD . 5)
+		'''
+
+		Bigram.__init__(self, grandparent, lex, htype, name="DistMod")
+
+	def make(self, direction, tree, sub, other, dist):
+		other_label = Feature.get_label(other)
+		return self.onecount("(%s %s %s %d)" % (tree.label, sub.label, other_label, dist))		
+
+	def dostuff(self, direction, a, tree, subs, head, i):
+		'''quantized absolute distance (number of words in b/w). see utility.py'''
+		
+		sub = subs[i]
+		if direction == Feature.LEFT:
+			dist = head.span[0] - sub.span[1]
+		else:
+			dist = sub.span[0] - head.span[1]
+		dist = quantize(dist)
+		a.append(self.make(direction, tree, head, sub, dist))
+

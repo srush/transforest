@@ -1,0 +1,36 @@
+D/olddesign////
+D/scripts////
+/README/1.2/Sun Dec  2 09:09:45 2007//
+/tmp/1.2/Tue Dec 18 09:32:05 2007//
+/decoder.py/1.2/Sun Jan 13 13:55:09 2008//
+/dumpdot.py/1.2/Sat Apr 19 06:32:32 2008//
+/forest.py/1.3/Sun Apr 20 22:50:33 2008//
+/fvector.py/1.2/Thu Jan  3 11:42:10 2008//
+/heads.py/1.3/Thu Jan  3 11:42:10 2008//
+/local_feat.py/1.2/Thu Jan  3 11:42:10 2008//
+/nbest_oracle.py/1.2/Sat Apr 19 06:50:53 2008//
+/node_and_hyperedge.py/1.2/Thu Jan  3 11:42:11 2008//
+/oracle.py/1.2/Sat Apr 19 06:32:46 2008//
+/parseval.py/1.2/Sun Jun 15 10:11:53 2008//
+/perceptron.py/1.2/Mon Apr 21 09:47:21 2008//
+/remove_sp.py/1.2/Tue Mar 25 05:41:46 2008//
+/tree.py/1.8/Sun Apr 20 00:52:12 2008//
+/utility.py/1.6/Sun Apr 20 22:51:16 2008//
+/README.features/1.2/Result of merge//
+/addgold.py/1.1/Thu Jan  3 11:42:10 2008//
+/cleangold.py/1.1/Thu Jan  3 11:42:10 2008//
+/cmp_kbest.py/1.1/Thu Jan  3 11:42:10 2008//
+/filter_by_length.py/1.1/Thu Jan  3 11:42:10 2008//
+/loglinear.py/1.1/Thu Jan  3 11:42:10 2008//
+/makefolds.py/1.1/Thu Jan  3 11:42:11 2008//
+/relative.py/1.1/Fri Sep 26 00:39:47 2008//
+/sep_kbest.py/1.1/Thu Jan  3 11:42:11 2008//
+/split.py/1.1/Thu Jan  3 11:42:11 2008//
+/ttt/1.1/Fri Sep 26 00:39:47 2008//
+/ttt2/1.1/Fri Sep 26 00:39:49 2008//
+/prune.py/1.1/Sun Apr 20 03:45:32 2008//
+/README-features.txt/1.2/Fri Sep 26 01:02:42 2008//
+/extract_features_nbest.py/1.2/Fri Sep 26 07:19:19 2008//
+/features.py/1.10/Fri Sep 26 23:43:19 2008//
+/plans.txt/1.2/Sat Sep 27 06:13:34 2008//
+/readkbest.py/1.9/Thu Oct  2 04:24:35 2008//

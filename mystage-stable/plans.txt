@@ -1,0 +1,68 @@
+1. edges (outward POS tags <=1)
+   
+   all: 147456 (length included)
+   first, remove 2:0:0:0 and 0:0:0:2 => 114971
+   then,  remove 0:2:0:0 and 0:0:2:0 =>  89363	  grep ":[^2]:[^2]:[^2]:[^2] "
+   finally, remove .:0:0:0:0		 =>  89247	  (redundant features always get same weights)
+
+   first: inside-1	.:0:[01]:[01]:0	 =>	 13996	  (3/10)
+   second: insde-2:		.:0:.:.:0	 =>  39604	  (inward can be 2)
+
+   to test with johnson's feature extraction:
+   
+	  cat small.50best | ../second-stage/programs/features/best-parses -m 0 insideedges 2>&1 | sed -e 's/=/:/g' >mj
+
+   to test with my feature extraction:
+
+	  cat small.50best | ../mystage-stable/extract_features_nbest.py insideedges 2>my
+
+   then diff:
+
+      diff -bd my mj
+
+   for differing lines, use difffeat.sh:
+
+      difffeat.sh "3414:2 4646" "2353=3	2341"
+
+
+   (edit spfeatures.h, and "make best-parses" to compile; models dir is hardcoded in best-parses.cc)
+
+   select feature subset by ids:
+
+      cat w-edges | ../code/scripts/select_ids.py f-insideedges > w-insideedges 
+
+	  
+    07-sep-25: "inside features" done
+   
+    next: try inside-2 features or try to run n-best reranking?
+    thought: outside features very hard to estimate lower/upper bounds.
+	     	on-the-fly implementation: waitings, when satisfied, remove from waitings list.
+           	easier hack: only consider with-in-a-rule outside tags, and only for current NTs (no children)
+
+	07-sep-27: TO hack johnson to MyEdges which rules out out-of-boundary inwards.
+
+
+ 	ssh nlpgrid05 "source ~/.bashrc; cd rerank/big-data/50best; ./addfeature.sh 19 insideedges2 &"  
+	then Ctrl + C after 1 sec. (weird)
+
+	also need to distinguish nbestlist and nbestforest (should be called "nbesttrees" vs. nbestcounts)
+
+	faster features!
+	arrays instead of hashes
+
+	time stats: 
+	50-best: 1772.43 (0.04 per sent) decode 435.72, averaging 31.82 load 1257.27, oracle 0.18
+	forest:	 38237.52 (0.96 per sent) decode 34656.09, averaging 42.13 load 2105.82, oracle 1330.51, extract 13545.65
+	only averaging is about the same!! why is loading so slow? (half size, twice as slow?) mem-efficiency?
+	btw, heads are really slow, but important.
+
+
+	release log:
+	v0.8 contains an efficiency bug in node.__str__()
+	
+2. parallel computation of same-class features
+
+2. combining all VP[i-j]
+   outside estimate
+3. estimate per-hyperedge upper and lower bounds
+
