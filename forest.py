@@ -32,7 +32,7 @@ from svector import Vector   # david's pyx, instead of my fvector
 from node_and_hyperedge import Node, Hyperedge
 
 from bleu import Bleu
-import oracle
+#import oracle
 
 from convert_forest import quoteattr
 from utility import desymbol

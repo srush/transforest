@@ -31,3 +31,10 @@ k=5	score=25.8540	bleu+1=0.3920	lenratio=0.84
 by line thank you
 1 forests loaded in 0.23 secs (avg 0.23 per sent)
 
+
+3) for translation forest, -k <K> automatically removes duplicate strings.
+
+4) prune.py -p <GAP> does relatively-useless pruning.
+
+5) --oracle prints oracle-BLEU translation.
+
