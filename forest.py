@@ -34,7 +34,6 @@ from node_and_hyperedge import Node, Hyperedge
 from bleu import Bleu
 #import oracle
 
-from convert_forest import quoteattr
 from utility import desymbol
 
 print_merit = False
@@ -42,26 +41,8 @@ cache_same = False
 
 base_weights = Vector("lm1=2 gt_prob=1")
 
-def remove_blacklist(fv):
-	## evil
-	del fv["k-value"]
-	del fv["min-top-k"]
-	del fv["value"]
-	del fv["count"]
-	del fv["rootcount"]
-	#ulf!
-	del fv["sid"]
-	del fv["ulf"]
-	del fv["u_tb_cost"]
-	#new
-	del fv["outm1n"]
-	del fv["psm1n"]
-	
-##  	if "outm1n" in fv:
-##  		fv["outm1n"] /= 40.
-##  		fv["psm1n"] /= 40.
-	return fv	
-
+def quoteattr(s):
+    return '"%s"' % s.replace('\\','\\\\').replace('"', '\\"')
 
 class Forest(object):
 	''' a collection of nodes '''
@@ -244,7 +225,7 @@ class Forest(object):
 				size = int(size)
 
 				fvector = Vector(fields) #
-				remove_blacklist(fvector)
+##				remove_blacklist(fvector)
 				node = Node(iden, labelspan, size, fvector, sent)
 				forest.add_node(node)
 
@@ -287,7 +268,7 @@ class Forest(object):
 ##						fields = fields[:-1]
 						
 					fvector = Vector(fields) #
-					remove_blacklist(fvector)
+##					remove_blacklist(fvector)
 
 					edge = Hyperedge(node, tailnodes, fvector, lhsstr)
 					edge.rule = rule

@@ -14,7 +14,7 @@ sent #boy, 1-best computed in 0.00 secs
 
 2) sample.transforest is an example translation forest.
 
-[amadeus:~/work1/translation-forest-code] cat sample.forest | ./forest.py  -k5 -w "lm1=4"
+[amadeus:~/work1/translation-forest-code] cat sample.transforest | ./forest.py  -k5 -w "lm1=4"
 
 using weights: "lm1=4...lm1=4" (1 fields)
 sent #sent.1, 5-best computed in 0.21 secs
