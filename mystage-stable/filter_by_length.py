@@ -7,21 +7,21 @@ from utility import num_words, words_from_line
 
 if __name__ == "__main__":
 
-	print_words = False
-	if sys.argv[1] == "-w":
-		## words
-		print_words = True
-		del sys.argv[1]
+    print_words = False
+    if sys.argv[1] == "-w":
+        ## words
+        print_words = True
+        del sys.argv[1]
 
-	try:
-		max_len = int(sys.argv[1])
-	except:
-		max_len = 400
+    try:
+        max_len = int(sys.argv[1])
+    except:
+        max_len = 400
 
-	for line in sys.stdin:
+    for line in sys.stdin:
 
-		words = words_from_line(line)
-		length = len(words)
-		if length <= max_len:
-			print " ".join(words) if print_words else line.strip() 
-	
+        words = words_from_line(line)
+        length = len(words)
+        if length <= max_len:
+            print " ".join(words) if print_words else line.strip() 
+    

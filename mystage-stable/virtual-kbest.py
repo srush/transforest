@@ -14,12 +14,12 @@ import sys, os, re
 
 if __name__ == "__main__":
 
-	goldfile = open(sys.argv[1])
-	
-	for i, f in enumerate(Forest.load("-")):
+    goldfile = open(sys.argv[1])
+    
+    for i, f in enumerate(Forest.load("-")):
 
-		line = goldfile.readline()
-		goldtree = Tree.parse(line.strip(), trunc=True, lower=True)
+        line = goldfile.readline()
+        goldtree = Tree.parse(line.strip(), trunc=True, lower=True)
 
-		
-		
+        
+        

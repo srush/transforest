@@ -1095,7 +1095,7 @@ def output(node, prompt, gbleu, gscore):
     gscore += [score]
 
     print >> logs,  "%s  \tscore=%.4lf\tbleu+1=%.4lf\tlenratio=%.2lf\n%s" % \
-          (prompt, score, bleu, fbleu.ratio(), hyp)			
+          (prompt, score, bleu, fbleu.ratio(), hyp)            
 
 
 if __name__ == "__main__":

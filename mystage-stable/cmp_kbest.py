@@ -21,16 +21,16 @@ precision = 0.00021
 
 if __name__ == "__main__":
 
-	filea = open(sys.argv[1])
-	fileb = open(sys.argv[2])
-	
-	for linea, lineb in zip(filea, fileb):
-		if linea.find("\t") >=0:
-			assert linea == lineb, "%s\t\t%s" % (linea.strip(), lineb.strip())
-			
-		else:
-			sa = float(linea.strip())
-			sb = float(lineb.strip())
-			
-			if math.fabs(sa - sb) > precision:
-				print "%.4lf\t\t%.4lf" % (sa, sb)
+    filea = open(sys.argv[1])
+    fileb = open(sys.argv[2])
+    
+    for linea, lineb in zip(filea, fileb):
+        if linea.find("\t") >=0:
+            assert linea == lineb, "%s\t\t%s" % (linea.strip(), lineb.strip())
+            
+        else:
+            sa = float(linea.strip())
+            sb = float(lineb.strip())
+            
+            if math.fabs(sa - sb) > precision:
+                print "%.4lf\t\t%.4lf" % (sa, sb)
