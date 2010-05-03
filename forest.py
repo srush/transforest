@@ -62,7 +62,11 @@ class Forest(object):
         return len(self.nodes), self.num_edges ##sum([len(node.edges) for node in self.nodes.values()])
 
     def tfsize(self):
-        ''' return (num_nodes, num_tfedges) pair '''
+        ''' return (num_nodes, num_tfedges) pair '''        
+        self.num_tfedges = 0
+        for node in self:
+            self.num_tfedges += len(node.tfedges)
+
         return len(self.nodes), self.num_tfedges ##sum([len(node.tfedges) for node in self.nodes.values()])
 
     def __init__(self, num, sentence, cased_sent, hgtype, tag=""):
@@ -108,11 +112,9 @@ class Forest(object):
                 self.cells[(i,j)] = []
         
         self.num_edges = 0
-        self.num_tfedges = 0
         for node in self:
             self.cells[node.span].append(node)
             self.num_edges += len(node.edges)
-            self.num_tfedges += len(node.tfedges)
 
     def clear_bests(self):
         for node in self:
@@ -363,7 +365,7 @@ class Forest(object):
         return forests
 
     def convert(self, globalruleid, ruleset):
-        print "convert parseforest to translation forest"
+        #print "convert parseforest to translation forest"
         for node in self:
             
             if len(node.edges) == 0:  #a leave node
@@ -373,7 +375,7 @@ class Forest(object):
                 node.frags.append((lhs, rhs, height))
                 
                 if lhs in ruleset:
-                    for (id, rule) in ruleset[lhs]:
+                    for (ruleid, rule) in ruleset[lhs]:
                         rulerhs, fields = rule.split("\t")
                         lhsstr = []
                         tailnodes = []
@@ -381,9 +383,9 @@ class Forest(object):
                             lhsstr.append(desymbol(x[1:-1]))    
                         fvector = Vector(fields) 
                         tfedge = Hyperedge(node, tailnodes, fvector, lhsstr)
-                        tfedge.rule = "%d %s -> %s" % (id, lhs, rulerhs)
+                        tfedge.rule = "%d %s -> %s" % (ruleid, lhs, rulerhs)
                     
-                        tfedge.ruleid = id
+                        tfedge.ruleid = ruleid
                         tfedge.node = node ## important backpointer!
                         node.tfedges.append(tfedge)
                 else:
@@ -392,9 +394,12 @@ class Forest(object):
                     lhsstr = [rhs]
                     tailnodes = []
                     tfedge = Hyperedge(node, tailnodes, fvector, lhsstr)
-                    print "this is globalruleid = %d" % globalruleid
+                    
+                    #print "this is globalruleid = %d" % globalruleid
                     globalruleid = globalruleid + 1
                     tfedge.ruleid = globalruleid
+                    tfedge.rule = "%d %s -> %s" % (globalruleid, lhs, rhs)
+                    tfedge.node = node
                     # Attention: reuse the lhs defined at beginning of "if len(node.edges) == 0:  #a leave node"
                     ruleset[lhs] = (globalruleid, rhs + '\tgt_prob=-100 plhs=-100')
                     node.tfedges.append(tfedge)
@@ -408,11 +413,13 @@ class Forest(object):
             else:  # it's a non-terminal node
                 for edge in node.edges:
                     baselhs = node.label + "(" + " ".join(["x:@:%d" % i for i in range(len(edge.subs))]) + ")"
-                    print "base frag: " + baselhs
+                    #print "base frag: " + baselhs
                     basefrags = [(baselhs, [], 1)]
                     for (id, sub) in enumerate(edge.subs):
                         oldfrags = basefrags
                         basefrags = [Forest.combinetwofrags(oldfrag, frag, id) for oldfrag in oldfrags for frag in sub.frags]
+                    #print basefrags
+                    #print "____________"
                     for extfrag in basefrags:
                         extlhs, extrhs, extheight = extfrag  
                         if extheight <= 2:
@@ -430,7 +437,7 @@ class Forest(object):
                                         lhsstr.append(tailnodes[int(x.split('x')[1])])    
                                 fvector = Vector(fields) 
                                 tfedge = Hyperedge(node, tailnodes, fvector, lhsstr)
-                                tfedge.rule = "%d %s -> %s" % (id, lhs, rulerhs)
+                                tfedge.rule = "%d %s -> %s" % (id, extlhs, rulerhs)
                 
                                 tfedge.ruleid = id
                                 tfedge.node = node ## important backpointer!
@@ -447,28 +454,31 @@ class Forest(object):
                     
                         globalruleid = globalruleid + 1
                         tfedge.ruleid = globalruleid
+                        tfedge.rule = "%d %s -> %s" % (globalruleid, deflhs, defrhs)
+                        tfedge.node = node
                         # Attention: reuse the lhs defined at beginning of "if len(node.edges) == 0:  #a leave node"
-                        rulset[deflhs] = (globalruleid, defrhs + '\tgt_prob=-100 plhs=-100')
+                        ruleset[deflhs] = (globalruleid, defrhs + '\tgt_prob=-100 plhs=-100')
                         node.tfedges.append(tfedge)
                              
                 #append the default frag
                 lhs = node.label
-                rhs = node.iden
+                rhs = [node]
                 height = 0
                 node.frags.append((lhs, rhs, height))
 
     @staticmethod
     def combinetwofrags(basefrag, varfrag, id):
         blhs, brhs, bheight = basefrag
-        vlhs, vrsh, vheight = varfrag
+        vlhs, vrhs, vheight = varfrag
         lhs = blhs.replace("x:@:%d" % id, vlhs)
-        rhs = brhs
-        rhs.extend(vrsh)
-        height = bheight if bheight > (vheight + 1) else (vheight+1)   
+        rhs = []
+        rhs.extend(brhs)
+        rhs.extend(vrhs)
+        height = bheight if bheight > (vheight + 1) else (vheight+1)
         return (lhs, rhs, height) if height <= 3 else None
 
     def dumptforest(self, ruleset, out=sys.stdout):
-        print "dump translation forest"
+        #print "dump translation forest"
         if type(out) is str:
             out = open(out, "wt")
 
@@ -481,15 +491,15 @@ class Forest(object):
         rulecache = set()    
         print >> out, "%d\t%d" % self.tfsize()  # nums of nodes and edges
         for node in self:            
-            print >> out, "%s\t%d |||" % (node.labelspan(separator="\t"), len(node.tfedges)),
+            print >> out, "%s\t%d" % (node.labelspan(separator="\t"), len(node.tfedges))
             for edge in node.tfedges:
                 if edge.ruleid in rulecache:
                     rule_print = str(edge.ruleid)
                 else:
-                    rule_print = "%s %s" % (edge.ruleid, ruleset[edge.ruleid].split('\t')[0])
+                    rule_print = "%s" % edge.rule
                     rulecache.add(edge.ruleid)
 
-                tailstr = " ".join([quoteattr(x) if type(x) is str else x.iden for x in tfedge.lhsstr])
+                tailstr = " ".join([quoteattr(x) if type(x) is str else x.iden for x in edge.lhsstr])
                 print >> out, "\t%s ||| %s ||| %s" \
                             % (tailstr, rule_print, edge.fvector)
                      
@@ -661,8 +671,8 @@ if __name__ == "__main__":
                 ruleset[lhs].append((globalruleid, rhs.strip()))
             else:
                 ruleset[lhs]=[(globalruleid, rhs.strip())]
-    print "rule set size = %d" % len(ruleset)
-    print "globalruleid = %d" % globalruleid 
+    #print "rule set size = %d" % len(ruleset)
+    #print "globalruleid = %d" % globalruleid 
     davidoraclebleus = Bleu()
 
     myoraclebleus = Bleu()
@@ -675,9 +685,7 @@ if __name__ == "__main__":
     
 
     for i, f in enumerate(Forest.load("-", hgtype)):
-
-        # f.settype(hgtype)
-      
+ 
         if f.tag == "1":
             f.tag = "sent.%d" % (i+1)
 
@@ -756,9 +764,12 @@ if __name__ == "__main__":
                     print >> logs,  "overall my      fear bleu = %.4lf (%.2lf) score = %.4lf" \
                           % (myfearbleus.score_ratio() + (myfearscores/(i+1),))
         else:  #parse forest  TODO: convert pforest to tforest by pattern matching 
-            print "start to convert pforest to forest "
+            #print "start to convert pforest to forest "
+            stime = time.time()
             f.convert(globalruleid, ruleset)
             f.dumptforest(ruleset)
+            etime = time.time()
+            print >> logs, "\t time to convert a pforest to tforest: %.2lf" % (etime - stime)
         
 
         if opts.compute_oracle:

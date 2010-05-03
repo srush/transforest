@@ -1,3 +1,10 @@
+Modified by haitao on 2010/05/03: 
+	convert a parse forest into a translation forest
+	usage: cat short1_pforest | ./forest.py -r rules.id_large1.prob >short1_tforest
+						     the rule set
+	You can use "-t" to specify an input of translation forest, example: cat sample.transforest | ./forest.py -t -k5 -w "lm1=4"
+
+  	
 translation forest codebase for haitao from liang.
 2010/04/27
 
