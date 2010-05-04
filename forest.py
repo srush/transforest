@@ -42,13 +42,14 @@ cache_same = False
 
 base_weights = Vector("lm1=2 gt_prob=1")
 ruleset = {}
-globalruleid = 0
 
 def quoteattr(s):
     return '"%s"' % s.replace('\\','\\\\').replace('"', '\\"')
 
 class Forest(object):
     ''' a collection of nodes '''
+
+    globalruleid = 0    
 
     #PARSEFOREST = 0
     #TRANSFOREST = 1
@@ -364,12 +365,13 @@ class Forest(object):
             forests.append(forest)
         return forests
 
-    def convert(self, globalruleid, ruleset):
+    def convert(self, ruleset):
         #print "convert parseforest to translation forest"
+        
         for node in self:
             
-            if len(node.edges) == 0:  #a leave node
-                lhs = node.label + "(\"" + self.cased_sent[node.span[0]] + "\")"
+            if node.is_terminal():  # a leaf node
+                lhs = node.label + "(\"" + node.word + "\")" # %
                 rhs = []
                 height = 1
                 node.frags.append((lhs, rhs, height))
@@ -380,28 +382,30 @@ class Forest(object):
                         lhsstr = []
                         tailnodes = []
                         for x in rulerhs.split():
-                            lhsstr.append(desymbol(x[1:-1]))    
+                            lhsstr.append(desymbol(x[1:-1]))   # "..."
                         fvector = Vector(fields) 
                         tfedge = Hyperedge(node, tailnodes, fvector, lhsstr)
                         tfedge.rule = "%d %s -> %s" % (ruleid, lhs, rulerhs)
                     
                         tfedge.ruleid = ruleid
-                        tfedge.node = node ## important backpointer!
                         node.tfedges.append(tfedge)
-                else:
+                        
+                else: # add default translation rule (monotonic)
+                    
                     rhs = self.cased_sent[node.span[0]]
-                    fvector = Vector("gt_prob=-100 plhs=-100")
+                    defaultfeats = "gt_prob=-100 plhs=-100"
+                    fvector = Vector(defaultfeats)
                     lhsstr = [rhs]
                     tailnodes = []
                     tfedge = Hyperedge(node, tailnodes, fvector, lhsstr)
                     
                     #print "this is globalruleid = %d" % globalruleid
-                    globalruleid = globalruleid + 1
-                    tfedge.ruleid = globalruleid
-                    tfedge.rule = "%d %s -> %s" % (globalruleid, lhs, rhs)
-                    tfedge.node = node
-                    # Attention: reuse the lhs defined at beginning of "if len(node.edges) == 0:  #a leave node"
-                    ruleset[lhs] = (globalruleid, rhs + '\tgt_prob=-100 plhs=-100')
+                    Forest.globalruleid += 1
+                    tfedge.ruleid = Forest.globalruleid
+                    # note: lhs is defined above "if"
+                    tfedge.rule = "%d %s -> %s" % (Forest.globalruleid, lhs, rhs)
+                    ruleset[lhs] = [(Forest.globalruleid, \
+                                     "%s\t%s" % (rhs, defaultfeats))]
                     node.tfedges.append(tfedge)
 
                 #append the default frag
@@ -412,12 +416,16 @@ class Forest(object):
             
             else:  # it's a non-terminal node
                 for edge in node.edges:
-                    baselhs = node.label + "(" + " ".join(["x:@:%d" % i for i in range(len(edge.subs))]) + ")"
+                    baselhs = "%s(%s)" % (node.label, \
+                                          " ".join("x:@:%d" % i \
+                                                   for i, _ in enumerate(edge.subs)))
                     #print "base frag: " + baselhs
                     basefrags = [(baselhs, [], 1)]
                     for (id, sub) in enumerate(edge.subs):
                         oldfrags = basefrags
-                        basefrags = [Forest.combinetwofrags(oldfrag, frag, id) for oldfrag in oldfrags for frag in sub.frags]
+                        # cross-product
+                        basefrags = [Forest.combinetwofrags(oldfrag, frag, id) \
+                                     for oldfrag in oldfrags for frag in sub.frags]
                     #print basefrags
                     #print "____________"
                     for extfrag in basefrags:
@@ -444,7 +452,7 @@ class Forest(object):
                                 node.tfedges.append(tfedge)
 
                     if len(node.tfedges) == 0:  # no translation hyperedge
-            
+                        # %            
                         deflhs = node.label + "(" + " ".join([sub.label for sub in edge.subs]) + ")"
                         defrhs = " ".join(["x:%d" % i for i, sub in enumerate(edge.subs)])        
                         deffvector = Vector("gt_prob=-100 plhs=-100")
@@ -766,11 +774,10 @@ if __name__ == "__main__":
         else:  #parse forest  TODO: convert pforest to tforest by pattern matching 
             #print "start to convert pforest to forest "
             stime = time.time()
-            f.convert(globalruleid, ruleset)
+            f.convert(ruleset)
             f.dumptforest(ruleset)
             etime = time.time()
-            print >> logs, "\t time to convert a pforest to tforest: %.2lf" % (etime - stime)
-        
+            print >> logs, "\t time to convert a pforest to tforest: %.2lf" % (etime - stime)       
 
         if opts.compute_oracle:
             print >> logs,  "overall 1-best deriv bleu = %.4lf (%.2lf) score = %.4lf" \
