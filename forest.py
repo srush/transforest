@@ -213,7 +213,7 @@ class Forest(object):
             if lower:
                 sent = [w.lower() for w in sent]   # mark johnson: lowercase all words
 
-            sent = words_to_chars(sent, encode_back=True)  # split to chars
+            #sent = words_to_chars(sent, encode_back=True)  # split to chars
 
             ## read in references
             refnum = int(file.readline().strip())
@@ -366,12 +366,13 @@ class Forest(object):
         return forests
 
     def convert(self, ruleset):
-        #print "convert parseforest to translation forest"
+        # default feats
+        defaultfeats = "gt_prob=-100 plhs=-100"
         
         for node in self:
             
             if node.is_terminal():  # a leaf node
-                lhs = node.label + "(\"" + node.word + "\")" # %
+                lhs = '%s("%s")' % (node.label, node.word)
                 rhs = []
                 height = 1
                 node.frags.append((lhs, rhs, height))
@@ -379,12 +380,12 @@ class Forest(object):
                 if lhs in ruleset:
                     for (ruleid, rule) in ruleset[lhs]:
                         rulerhs, fields = rule.split("\t")
-                        lhsstr = []
+                        rhsstr = []
                         tailnodes = []
                         for x in rulerhs.split():
-                            lhsstr.append(desymbol(x[1:-1]))   # "..."
+                            rhsstr.append(desymbol(x[1:-1]))   # "..."
                         fvector = Vector(fields) 
-                        tfedge = Hyperedge(node, tailnodes, fvector, lhsstr)
+                        tfedge = Hyperedge(node, tailnodes, fvector, rhsstr)
                         tfedge.rule = "%d %s -> %s" % (ruleid, lhs, rulerhs)
                     
                         tfedge.ruleid = ruleid
@@ -392,14 +393,13 @@ class Forest(object):
                         
                 else: # add default translation rule (monotonic)
                     
-                    rhs = self.cased_sent[node.span[0]]
-                    defaultfeats = "gt_prob=-100 plhs=-100"
-                    fvector = Vector(defaultfeats)
-                    lhsstr = [rhs]
-                    tailnodes = []
-                    tfedge = Hyperedge(node, tailnodes, fvector, lhsstr)
+                    rhs = '"%s"' % node.word
                     
-                    #print "this is globalruleid = %d" % globalruleid
+                    fvector = Vector(defaultfeats)
+                    rhsstr = [node.word]
+                    tailnodes = []
+                    tfedge = Hyperedge(node, tailnodes, fvector, rhsstr)
+                    
                     Forest.globalruleid += 1
                     tfedge.ruleid = Forest.globalruleid
                     # note: lhs is defined above "if"
@@ -419,53 +419,49 @@ class Forest(object):
                     baselhs = "%s(%s)" % (node.label, \
                                           " ".join("x:@:%d" % i \
                                                    for i, _ in enumerate(edge.subs)))
-                    #print "base frag: " + baselhs
+                    
                     basefrags = [(baselhs, [], 1)]
                     for (id, sub) in enumerate(edge.subs):
                         oldfrags = basefrags
                         # cross-product
                         basefrags = [Forest.combinetwofrags(oldfrag, frag, id) \
                                      for oldfrag in oldfrags for frag in sub.frags]
-                    #print basefrags
-                    #print "____________"
+                    
                     for extfrag in basefrags:
                         extlhs, extrhs, extheight = extfrag  
                         if extheight <= 2:
                             node.frags.append(extfrag)
                         if extlhs in ruleset:
-                            #print ruleset[extlhs]
                             for (id, rule) in ruleset[extlhs]:
                                 rulerhs, fields = rule.split("\t")
-                                lhsstr = []
+                                rhsstr = []
                                 tailnodes = extrhs
                                 for x in rulerhs.split():
                                     if x[0] == '"':  # word
-                                        lhsstr.append(desymbol(x[1:-1]))
+                                        rhsstr.append(desymbol(x[1:-1]))
                                     else:
-                                        lhsstr.append(tailnodes[int(x.split('x')[1])])    
+                                        rhsstr.append(tailnodes[int(x.split('x')[1])])    
                                 fvector = Vector(fields) 
-                                tfedge = Hyperedge(node, tailnodes, fvector, lhsstr)
+                                tfedge = Hyperedge(node, tailnodes, fvector, rhsstr)
                                 tfedge.rule = "%d %s -> %s" % (id, extlhs, rulerhs)
                 
                                 tfedge.ruleid = id
-                                tfedge.node = node ## important backpointer!
                                 node.tfedges.append(tfedge)
 
                     if len(node.tfedges) == 0:  # no translation hyperedge
-                        # %            
-                        deflhs = node.label + "(" + " ".join([sub.label for sub in edge.subs]) + ")"
-                        defrhs = " ".join(["x:%d" % i for i, sub in enumerate(edge.subs)])        
-                        deffvector = Vector("gt_prob=-100 plhs=-100")
+                        
+                        deflhs = "%s(%s)" % (node.label, " ".join(sub.label for sub in edge.subs))
+                        defrhs = " ".join("x%d" % i for i, _ in enumerate(edge.subs))        
+                        deffvector = Vector(defaultfeats)
                         tailnodes = edge.subs
-                        lhsstr = edge.subs
-                        tfedge = Hyperedge(node, tailnodes, fvector, lhsstr)
+                        rhsstr = edge.subs
+                        tfedge = Hyperedge(node, tailnodes, deffvector, rhsstr)
                     
-                        globalruleid = globalruleid + 1
-                        tfedge.ruleid = globalruleid
-                        tfedge.rule = "%d %s -> %s" % (globalruleid, deflhs, defrhs)
-                        tfedge.node = node
-                        # Attention: reuse the lhs defined at beginning of "if len(node.edges) == 0:  #a leave node"
-                        ruleset[deflhs] = (globalruleid, defrhs + '\tgt_prob=-100 plhs=-100')
+                        Forest.globalruleid += 1
+                        tfedge.ruleid = Forest.globalruleid
+                        tfedge.rule = "%d %s -> %s" % (Forest.globalruleid, deflhs, defrhs)
+                        
+                        ruleset[deflhs] = [(Forest.globalruleid, "%s\t%s" % (defrhs, defaultfeats))]
                         node.tfedges.append(tfedge)
                              
                 #append the default frag
