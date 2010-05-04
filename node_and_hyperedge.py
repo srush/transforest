@@ -56,11 +56,12 @@ class Node(Tree):
         #new features
         self.frags = []
         self.tfedges = []
+
+        ## N.B.: parse forest node can be termllinal
         
         word = sent[self.span[0]] if (size == 0) else None
 
         ## now in MT forest, nodes are always non-final. hyperedges can be final (terminal).
-        #word = None
 
         ## in tree.py
         self.prepare_stuff(label, word)
