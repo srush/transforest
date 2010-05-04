@@ -18,6 +18,9 @@ htypes = [heads.SEM, heads.SYN]
 
 print_heads = False
 
+import gflags as flags
+FLAGS=flags.FLAGS
+
 class Tree(object):
 
     def prepare_stuff(self, label, wrd=None, sym=True):
@@ -405,12 +408,10 @@ class Tree(object):
 
 if __name__ == "__main__":
 
-    max_len = 400
-    if len(sys.argv) > 1 and sys.argv[1].find("-c") >= 0:
-        max_len = int(sys.argv[1][2:])
-        del sys.argv[1]
+    flags.DEFINE_integer("max_len", 400, "maximum sentence length")
+    argv = FLAGS(sys.argv)
 
     for line in sys.stdin:
         t = Tree.parse(line.strip(), lower=False)
-        if len(t) <= max_len:
+        if len(t) <= FLAGS.max_len:
             print t
