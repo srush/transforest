@@ -43,6 +43,8 @@ cache_same = False
 base_weights = Vector("lm1=2 gt_prob=1")
 ruleset = {}
 
+filtered_ruleset = {}
+
 def quoteattr(s):
     return '"%s"' % s.replace('\\','\\\\').replace('"', '\\"')
 
@@ -365,7 +367,7 @@ class Forest(object):
             forests.append(forest)
         return forests
 
-    def convert(self, ruleset):
+    def convert(self, ruleset, filtered_ruleset):
         # default feats
         defaultfeats = "gt_prob=-100 plhs=-100"
         
@@ -378,6 +380,8 @@ class Forest(object):
                 node.frags.append((lhs, rhs, height))
                 
                 if lhs in ruleset:
+                   # if lhs not in filtered_ruleset:
+                    #    filtered_ruleset[lhs] = ruleset[lhs][:10]
                     for (ruleid, rule) in ruleset[lhs]:
                         rulerhs, fields = rule.split("\t")
                         rhsstr = []
@@ -432,6 +436,8 @@ class Forest(object):
                         if extheight <= 2:
                             node.frags.append(extfrag)
                         if extlhs in ruleset:
+                     #       if extlhs not in filtered_ruleset:
+                      #          filtered_ruleset[extlhs] = ruleset[extlhs][:10]
                             for (id, rule) in ruleset[extlhs]:
                                 rulerhs, fields = rule.split("\t")
                                 rhsstr = []
@@ -770,11 +776,14 @@ if __name__ == "__main__":
         else:  #parse forest  TODO: convert pforest to tforest by pattern matching 
             #print "start to convert pforest to forest "
             stime = time.time()
-            f.convert(ruleset)
+            f.convert(ruleset, filtered_ruleset)
             f.dumptforest(ruleset)
             etime = time.time()
             print >> logs, "\t time to convert a pforest to tforest: %.2lf" % (etime - stime)       
-
+            #for (lhs, rules) in filtered_ruleset.iteritems():
+            #    for id, rule in rules:
+            #        print >> logs, "%s -> %s" % (lhs, rule)
+            
         if opts.compute_oracle:
             print >> logs,  "overall 1-best deriv bleu = %.4lf (%.2lf) score = %.4lf" \
                   % (onebestbleus.score_ratio() + (onebestscores/(i+1),))
