@@ -1,5 +1,9 @@
 0	政府 从来 不会 参与 寻找 阴谋 的 行为 . "
-0
+4
+the government will never involve in the search for conspiracy . "
+the government will never involve in the search for conspiracy . "
+the government will never involve in the search for conspiracy . "
+the government will never involve in the search for conspiracy . "
 22	1441
 0	 NN [0-1]	50
 	"a" "government" ||| 168 NN("政府") -> "a" "government" ||| gt_prob=-10.185 plhs=-4.65378 text-length=2
