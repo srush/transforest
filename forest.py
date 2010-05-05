@@ -509,8 +509,9 @@ class Forest(object):
                     rulecache.add(edge.ruleid)
 
                 tailstr = " ".join([quoteattr(x) if type(x) is str else x.iden for x in edge.lhsstr])
-                print >> out, "\t%s ||| %s ||| %s" \
-                            % (tailstr, rule_print, edge.fvector)
+                wordnum = sum([1 if type(x) is str else 0 for x in edge.lhsstr])
+                print >> out, "\t%s ||| %s ||| %s text-length=%d" \
+                            % (tailstr, rule_print, edge.fvector, wordnum)
                      
         print >> out  ## last blank line
     
