@@ -411,6 +411,7 @@ class Tree(object):
                 subs += s
             self.nid = nid
             subs += "%d\t%s\t1\n" % (nid, self.labelspan())
+            # TODO: prob
             subs += "\t%s ||| %d %s -> %s ||| p=1\n" % \
                   (" ".join(str(sub.nid) for sub in self.subs), eid, \
                    self.label, " ".join(sub.label for sub in self.subs))
