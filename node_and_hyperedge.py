@@ -84,7 +84,7 @@ class Node(Tree):
             self.kset.add(tuple(self.besttree))
             self.fixed = True
                
-        self.bestedge = None
+##        self.bestedge = None  ## N.B.: WHY??
         self.cand = None
 
     def mapped_span(self, mapping):
@@ -158,6 +158,7 @@ class Node(Tree):
                 edge.beta = score
 
                 if self.bestedge is None or score < self.bestedge.beta:
+##                    print >> logs, self, edge
                     self.bestedge = edge
                     self.besttree = tree
                     best_fvector = fvector
@@ -169,6 +170,13 @@ class Node(Tree):
 
         return self.bestres
 
+    def print_derivation(self, dep=0):
+
+        if not self.is_terminal():
+            print "  " * dep, self.labelspan()
+            for sub in self.bestedge.subs:
+                sub.print_derivation(dep+1)
+            print
 
     def getcandidates(self, dep=0):
         self.cand = []

@@ -1,3 +1,14 @@
+TODOs:
+
+1) Rule class
+2) prune top-down filtering
+3) "\"" in rules
+4) gflags and forest type
+5) tree2forest checkin
+6) print derivations
+7) text-length feature
+8) GHKM unary rules
+
 Modified by haitao on 2010/05/03: 
 	convert a parse forest into a translation forest
 	usage: cat short1_pforest | ./forest.py -r rules.id_large1.prob >short1_tforest

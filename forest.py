@@ -173,7 +173,7 @@ class Forest(object):
               (self.tag, k, time.time() - basetime)
 
     @staticmethod
-    def load(filename, hgtype, lower=True, sentid=0):
+    def load(filename, hgtype=0, lower=True, sentid=0):
         '''now returns a generator! use load().next() for singleton.
            and read the last line as the gold tree -- TODO: optional!
            and there is an empty line at the end
@@ -182,8 +182,7 @@ class Forest(object):
         file = getfile(filename)
         line = None
         total_time = 0
-        num_sents = 0
-        
+        num_sents = 0        
         
         while True:            
             
@@ -361,7 +360,7 @@ class Forest(object):
               % (num_sents, total_time, total_time/(num_sents+0.001))
 
     @staticmethod
-    def loadall(filename, hgtype):
+    def loadall(filename, hgtype=0):
         forests = []
         for forest in Forest.load(filename, hgtype):
             forests.append(forest)
@@ -383,7 +382,7 @@ class Forest(object):
                    # if lhs not in filtered_ruleset:
                     #    filtered_ruleset[lhs] = ruleset[lhs][:10]
                     for (ruleid, rule) in ruleset[lhs]:
-                        rulerhs, fields = rule.split("\t")
+                        rulerhs, fields = rule.split(" ### ")
                         rhsstr = []
                         tailnodes = []
                         for x in rulerhs.split():
@@ -409,7 +408,7 @@ class Forest(object):
                     # note: lhs is defined above "if"
                     tfedge.rule = "%d %s -> %s" % (Forest.globalruleid, lhs, rhs)
                     ruleset[lhs] = [(Forest.globalruleid, \
-                                     "%s\t%s" % (rhs, defaultfeats))]
+                                     "%s ### %s" % (rhs, defaultfeats))]
                     node.tfedges.append(tfedge)
 
                 #append the default frag
@@ -439,7 +438,7 @@ class Forest(object):
                      #       if extlhs not in filtered_ruleset:
                       #          filtered_ruleset[extlhs] = ruleset[extlhs][:10]
                             for (id, rule) in ruleset[extlhs]:
-                                rulerhs, fields = rule.split("\t")
+                                rulerhs, fields = rule.split(" ### ")
                                 rhsstr = []
                                 tailnodes = extrhs
                                 for x in rulerhs.split():
@@ -467,7 +466,7 @@ class Forest(object):
                         tfedge.ruleid = Forest.globalruleid
                         tfedge.rule = "%d %s -> %s" % (Forest.globalruleid, deflhs, defrhs)
                         
-                        ruleset[deflhs] = [(Forest.globalruleid, "%s\t%s" % (defrhs, defaultfeats))]
+                        ruleset[deflhs] = [(Forest.globalruleid, "%s ### %s" % (defrhs, defaultfeats))]
                         node.tfedges.append(tfedge)
                              
                 #append the default frag
@@ -714,7 +713,9 @@ if __name__ == "__main__":
                     opts.k = 1
 
                 f.lazykbest(opts.k, weights=weights, sentid=f.tag, threshold=opts.threshold)
-                print >> logs, "%d\t%s" % (len(f.root.klist), f.tag)            
+                print >> logs, "%d\t%s" % (len(f.root.klist), f.tag)
+                
+                f.root.print_derivation()
 
                 for k, res in enumerate(f.root.klist):
                     score, hyp, fv = res
