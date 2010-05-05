@@ -41,9 +41,6 @@ print_merit = False
 cache_same = False
 
 base_weights = Vector("lm1=2 gt_prob=1")
-ruleset = {}
-
-filtered_ruleset = {}
 
 def quoteattr(s):
     return '"%s"' % s.replace('\\','\\\\').replace('"', '\\"')
@@ -644,9 +641,6 @@ if __name__ == "__main__":
     ## default value for k is different for the two modes: fixed-k-best or \inf-best
 
   #
-    optparser.add_option("-r", "--ruleset", dest="ruleset", type=str, help="translation rule set", default=None)
-    optparser.add_option("-t", "--hgtype", dest="tranforest", action="store_true", help="type of forest p or t", default=False)
-  
     optparser.add_option("-k", "", dest="k", type=int, help="k-best", metavar="K", default=None)
     optparser.add_option("", "--thres", dest="threshold", type=float, \
                          help="threshold/margin", metavar="THRESHOLD", default=None)
@@ -662,19 +656,26 @@ if __name__ == "__main__":
     optparser.add_option("", "--hope", dest="hope", type=float, help="hope weight", default=0)
     optparser.add_option("", "--recover", dest="recover_oracle", action="store_true", help="recover oracles", default=False)
     
+    optparser.add_option("-r", "--ruleset", dest="ruleset", type=str, help="translation rule set", default=None)
+    optparser.add_option("-t", "--hgtype", dest="tranforest", action="store_true", help="type of forest p or t", default=False)
+##    optparser.add_option("", "--refs", dest="refs", type=str, help="references", default=None)
+  
     (opts, args) = optparser.parse_args()
 
     if opts.first is not None:
         first, last = map(int, opts.first.split(":"))
 
-    weights = get_weights(opts.weights)
-  
+    # "ref*" or "ref1 ref2..."
+    reffiles = [open(f) for f in args]
+    
+    weights = get_weights(opts.weights) 
   
     hgtype=0 # type of parse forest
     if opts.tranforest:
         hgtype=1   
     
     if opts.ruleset is not None:
+        ruleset = {}
         for globalruleid, rule in enumerate(fileinput.input(opts.ruleset)):
             lhs, rhs = rule.split(" -> ", 1)
             if lhs in ruleset:
@@ -694,73 +695,73 @@ if __name__ == "__main__":
     onebestbleus = Bleu()
     
 
-    for i, f in enumerate(Forest.load("-", hgtype)):
+    for i, forest in enumerate(Forest.load("-", hgtype)):
  
-        if f.tag == "1":
-            f.tag = "sent.%d" % (i+1)
+        if forest.tag == "1":
+            forest.tag = "sent.%d" % (i+1)
 
         if opts.first is not None:
             if i+1 >= first:
-                f.dump()
+                forest.dump()
             if i+1 >= last:
                 break
             continue
         elif opts.dump:
-            f.dump()
+            forest.dump()
         
         if hgtype:  # translation forest
             if not opts.infinite:
                 if opts.k is None:
                     opts.k = 1
 
-                f.lazykbest(opts.k, weights=weights, sentid=f.tag, threshold=opts.threshold)
-                print >> logs, "%d\t%s" % (len(f.root.klist), f.tag)
+                forest.lazykbest(opts.k, weights=weights, sentid=forest.tag, threshold=opts.threshold)
+                print >> logs, "%d\t%s" % (len(forest.root.klist), forest.tag)
                 
-                f.root.print_derivation()
+##                forest.root.print_derivation()
 
-                for k, res in enumerate(f.root.klist):
+                for k, res in enumerate(forest.root.klist):
                     score, hyp, fv = res
                     hyp = (hyp)
-                    hyp_bleu = f.bleu.rescore(hyp)
-                    print >> logs, "k=%d\tscore=%.4lf\tbleu+1=%.4lf\tlenratio=%.2lf\n%s" % (k+1, score, hyp_bleu, f.bleu.ratio(), hyp)
+                    hyp_bleu = forest.bleu.rescore(hyp)
+                    print >> logs, "k=%d\tscore=%.4lf\tbleu+1=%.4lf\tlenratio=%.2lf\n%s" % (k+1, score, hyp_bleu, forest.bleu.ratio(), hyp)
                     if k == 0:
                         onebestscores += score
-                        onebestbleus += f.bleu.copy()
+                        onebestbleus += forest.bleu.copy()
 
                 if opts.recover_oracle:
-                    oracle_bleu, oracle_hyp, oracle_fv = f.recover_oracle()[:3]
+                    oracle_bleu, oracle_hyp, oracle_fv = forest.recover_oracle()[:3]
                     oracle_score = oracle_fv.dot(weights)
                     oracle_hyp = (oracle_hyp)
-                    davidoraclebleus += f.bleu.copy()
+                    davidoraclebleus += forest.bleu.copy()
                     davidscores += oracle_score
                     print >> logs,  "oracle\tscore=%.4lf\tbleu+1=%.4lf\tlenratio=%.2lf\n%s" % \
-                                (oracle_score, oracle_bleu, f.bleu.ratio(), oracle_hyp)            
+                                (oracle_score, oracle_bleu, forest.bleu.ratio(), oracle_hyp)            
 
                 if opts.compute_oracle:
-                    bleu, hyp, fv, edgelist = f.compute_oracle(weights, opts.hope, 1)
-                    bleu = f.bleu.rescore(hyp)
+                    bleu, hyp, fv, edgelist = forest.compute_oracle(weights, opts.hope, 1)
+                    bleu = forest.bleu.rescore(hyp)
                     mscore = weights.dot(fv)
                     print  >> logs, "moracle\tscore=%.4lf\tbleu+1=%.4lf\tlenratio=%.2lf\n%s" % \
-                                (mscore, f.bleu.fscore(), f.bleu.ratio(), hyp)
+                                (mscore, forest.bleu.fscore(), forest.bleu.ratio(), hyp)
                 
-                    myoraclebleus += f.bleu.copy()
+                    myoraclebleus += forest.bleu.copy()
                     myscores += mscore
 
                 if opts.compute_fear:
-                    bleu, hyp, fv, edgelist = f.compute_oracle(weights, 1, -1)
-                    bleu = f.bleu.rescore(hyp)
+                    bleu, hyp, fv, edgelist = forest.compute_oracle(weights, 1, -1)
+                    bleu = forest.bleu.rescore(hyp)
                     mscore = weights.dot(fv)
                     print  >> logs, "   fear\tscore=%.4lf\tbleu+1=%.4lf\tlenratio=%.2lf\n%s" % \
-                                (mscore, f.bleu.fscore(), f.bleu.ratio(), hyp)
+                                (mscore, forest.bleu.fscore(), forest.bleu.ratio(), hyp)
                 
-                    myfearbleus += f.bleu.copy()
+                    myfearbleus += forest.bleu.copy()
                     myfearscores += mscore
 
             else:
                 if opts.k is None:
                     opts.k = 100000 ## inf
-                for res in f.iterkbest(opts.k, threshold=opts.threshold):
-                    print >> logs,  "%.4lf\n%s" % (f.adjust_output(res)[:2])
+                for res in forest.iterkbest(opts.k, threshold=opts.threshold):
+                    print >> logs,  "%.4lf\n%s" % (forest.adjust_output(res)[:2])
 
             if i % 10 == 9:
                 print >> logs,  "overall 1-best deriv bleu = %.4lf (%.2lf) score = %.4lf" \
@@ -775,11 +776,14 @@ if __name__ == "__main__":
                 if opts.compute_oracle:
                     print >> logs,  "overall my      fear bleu = %.4lf (%.2lf) score = %.4lf" \
                           % (myfearbleus.score_ratio() + (myfearscores/(i+1),))
-        else:  #parse forest  TODO: convert pforest to tforest by pattern matching 
+        else:
+            #parse forest  TODO: convert pforest to tforest by pattern matching 
             #print "start to convert pforest to forest "
             stime = time.time()
-            f.convert(ruleset, filtered_ruleset)
-            f.dumptforest(ruleset)
+            filtered_ruleset = {}
+            forest.convert(ruleset, filtered_ruleset)
+            forest.refs = [f.readline().strip() for f in reffiles]
+            forest.dumptforest(ruleset)
             etime = time.time()
             print >> logs, "\t time to convert a pforest to tforest: %.2lf" % (etime - stime)       
             #for (lhs, rules) in filtered_ruleset.iteritems():

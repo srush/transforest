@@ -397,7 +397,25 @@ class Tree(object):
     def is_same_sentence(self, other):
         ##assert other isinstance(other, Tree), "the other tree is not of Tree type"
 
-        return len(self) == len(other) and self.get_sent() == other.get_sent()        
+        return len(self) == len(other) and self.get_sent() == other.get_sent()
+
+    def to_forest(self, nid=0, eid=0):
+
+        if self.is_terminal():
+            self.nid = nid
+            return nid+1, eid, "%d\t%s\t0\n" % (nid, self.labelspan())
+        else:
+            subs = ""
+            for sub in self.subs:
+                nid, eid, s = sub.to_forest(nid, eid)
+                subs += s
+            self.nid = nid
+            subs += "%d\t%s\t1\n" % (nid, self.labelspan())
+            subs += "\t%s ||| %d %s -> %s ||| p=1\n" % \
+                  (" ".join(str(sub.nid) for sub in self.subs), eid, \
+                   self.label, " ".join(sub.label for sub in self.subs))
+
+            return nid+1, eid+1, subs
         
             
 ###########################################
@@ -406,12 +424,24 @@ class Tree(object):
 
 ###########################################
 
+def print_forest(tree, tid=0):
+
+    print "%s\t%s" % (tid, " ".join(tree.get_sent()))
+    print 0 # no reference ==> in the future, could be gold parse
+    nnodes, nedges, s = tree.to_forest()    
+    print "%d\t%d" % (nnodes, nedges)
+    print s
+
 if __name__ == "__main__":
 
     flags.DEFINE_integer("max_len", 400, "maximum sentence length")
+    flags.DEFINE_boolean("toforest", False, "convert to trivial forest")
     argv = FLAGS(sys.argv)
 
-    for line in sys.stdin:
+    for i, line in enumerate(sys.stdin):
         t = Tree.parse(line.strip(), lower=False)
         if len(t) <= FLAGS.max_len:
-            print t
+            if FLAGS.toforest:
+                print_forest(t, tid=i)
+            else:
+                print t
