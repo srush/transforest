@@ -4,10 +4,21 @@ TODOs:
 2) prune top-down filtering
 3) "\"" in rules
 4) gflags and forest type
-5) tree2forest checkin
+-5) tree2forest checkin         done by LH
 6) print derivations
-7) text-length feature
+-7) text-length feature         done by HM
 8) GHKM unary rules
+9) convert forest should return a new forest, instead of in-place
+-10) refs                       done by LH
+
+
+Modified by liang on 2010/05/05:
+
+	cat short_pforests | ./forest.py  -r big_rules ref* >short_tforests  2>convert.log &
+
+pipeline:
+	
+	head parses | ./tree.py --toforest | ./forest.py -r big_rules ref* | ./forest.py -t -w "gt_prob=-1 text-length=-1" --oracle
 
 Modified by haitao on 2010/05/03: 
 	convert a parse forest into a translation forest

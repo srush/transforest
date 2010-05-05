@@ -224,6 +224,8 @@ class Forest(object):
 
             forest = Forest(num, sent, cased_sent, tag, hgtype)
 
+            forest.tag = tag
+
             forest.refs = refs
             forest.bleu = Bleu(refs=refs)  ## initial (empty test) bleu; used repeatedly later
             
@@ -513,7 +515,7 @@ class Forest(object):
         print >> out  ## last blank line
     
     def dump(self, out=sys.stdout):
-        '''output to stdout'''/Users/haitaomi/Works/ISI/back/transforest/node_and_hyperedge.py
+        '''output to stdout'''
         # wsj_00.00       No , it was n't Black Monday .
         # 199
         # 1    DT [0-1]    0 ||| 12321=... 46456=...
@@ -647,8 +649,8 @@ if __name__ == "__main__":
     optparser.add_option("", "--inf", dest="infinite", action="store_true", help="\inf-best", default=False)
     optparser.add_option("", "--dump", dest="dump", action="store_true", help="\inf-best", default=False)
     optparser.add_option("", "--id", dest="sentid", type=int, help="sentence id", metavar="ID", default=0)
-    optparser.add_option("-R", "--range", dest="first", type=str, \
-                         help="dump forests from F to T (inclusive) to stdout", metavar="F:T", default=None)
+    optparser.add_option("", "--first", dest="first", type=str, \
+                         help="only first F forests", metavar="F", default=None)
     ## weights
     optparser.add_option("-w", "--weights", dest="weights", type=str, help="weights file or str", metavar="WEIGHTS", default="lm1=2 gt_prob=1")
     optparser.add_option("", "--oracle", dest="compute_oracle", action="store_true", help="compute oracles", default=False)
@@ -661,9 +663,6 @@ if __name__ == "__main__":
 ##    optparser.add_option("", "--refs", dest="refs", type=str, help="references", default=None)
   
     (opts, args) = optparser.parse_args()
-
-    if opts.first is not None:
-        first, last = map(int, opts.first.split(":"))
 
     # "ref*" or "ref1 ref2..."
     reffiles = [open(f) for f in args]
@@ -697,18 +696,9 @@ if __name__ == "__main__":
 
     for i, forest in enumerate(Forest.load("-", hgtype)):
  
-        if forest.tag == "1":
-            forest.tag = "sent.%d" % (i+1)
+#         if forest.tag == "1":
+#             forest.tag = "sent.%d" % (i+1)
 
-        if opts.first is not None:
-            if i+1 >= first:
-                forest.dump()
-            if i+1 >= last:
-                break
-            continue
-        elif opts.dump:
-            forest.dump()
-        
         if hgtype:  # translation forest
             if not opts.infinite:
                 if opts.k is None:
@@ -781,18 +771,24 @@ if __name__ == "__main__":
             #print "start to convert pforest to forest "
             stime = time.time()
             filtered_ruleset = {}
+            # TODO: I think it should return a new forest instead -- LH
             forest.convert(ruleset, filtered_ruleset)
             forest.refs = [f.readline().strip() for f in reffiles]
             forest.dumptforest(ruleset)
             etime = time.time()
-            print >> logs, "\t time to convert a pforest to tforest: %.2lf" % (etime - stime)       
+            print >> logs, "sent: %s, len: %d, nodes: %d, tedges: %d, \tconvert time: %.2lf" % \
+                  (forest.tag, len(forest), forest.size()[0], forest.tfsize()[1], etime - stime)
             #for (lhs, rules) in filtered_ruleset.iteritems():
             #    for id, rule in rules:
             #        print >> logs, "%s -> %s" % (lhs, rule)
             
-        if opts.compute_oracle:
-            print >> logs,  "overall 1-best deriv bleu = %.4lf (%.2lf) score = %.4lf" \
-                  % (onebestbleus.score_ratio() + (onebestscores/(i+1),))
-            print >> logs,  "overall my    oracle bleu = %.4lf (%.2lf) score = %.4lf" \
-                  % (myoraclebleus.score_ratio() + (myscores/(i+1),))
+#         if opts.compute_oracle:
+#             print >> logs,  "overall 1-best deriv bleu = %.4lf (%.2lf) score = %.4lf" \
+#                   % (onebestbleus.score_ratio() + (onebestscores/(i+1),))
+#             print >> logs,  "overall my    oracle bleu = %.4lf (%.2lf) score = %.4lf" \
+#                   % (myoraclebleus.score_ratio() + (myscores/(i+1),))
 
+        if opts.first is not None:
+            if i+1 >= int(opts.first):
+                break
+        

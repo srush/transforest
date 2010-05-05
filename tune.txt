@@ -1,0 +1,14 @@
+text-length= -1	overall 1-best deriv bleu = 0.0776 (1.79) score = 212.0283
+text-length= -1.2	overall 1-best deriv bleu = 0.1176 (1.27) score = 258.1615
+text-length= -1.4	overall 1-best deriv bleu = 0.1236 (1.22) score = 303.7173
+text-length= -1.6	overall 1-best deriv bleu = 0.1226 (1.20) score = 349.1518
+text-length= -1.8	overall 1-best deriv bleu = 0.1247 (1.17) score = 394.5077
+text-length= -2	overall 1-best deriv bleu = 0.1270 (1.14) score = 439.8163
+text-length= -2.2	overall 1-best deriv bleu = 0.1197 (1.11) score = 485.0798
+text-length= -2.4	overall 1-best deriv bleu = 0.1352 (0.95) score = 530.1719
+text-length= -2.6	overall 1-best deriv bleu = 0.1327 (0.94) score = 575.2322
+text-length= -2.8	overall 1-best deriv bleu = 0.1325 (0.93) score = 620.2810
+text-length= -3	overall 1-best deriv bleu = 0.1269 (0.92) score = 665.3196
+
+text-length= ??	overall my    oracle bleu = 0.4784 (1.08) score = 255.7130
+
