@@ -26,7 +26,7 @@ import fileinput
 
 logs = sys.stderr
 
-from utility import getfile, words_to_chars
+from utility import getfile, words_to_chars, quoteattr
 from tree import Tree
 
 from svector import Vector   # david's pyx, instead of my fvector
@@ -36,45 +36,12 @@ from bleu import Bleu
 #import oracle
 
 from utility import desymbol
+from rule import Rule, RuleSet
 
 print_merit = False
 cache_same = False
 
 base_weights = Vector("lm1=2 gt_prob=1 plhs=1 text-length=1")
-
-def quoteattr(s):
-    return '"%s"' % s.replace('\\','\\\\').replace('"', '\\"')
-
-class Rule(object):
-
-    __slots__ = "lhs", "rhs", "fields"
-
-    def __init__(self, line):
-        '''S -> NP VP ### gt_prob=-5 text-lenght=0 plhs=-2'''
-        rule, self.fields = line.split(" ### ")
-        self.lhs, rhs = rule.strip().split(" -> ")
-        self.rhs = rhs.split()
-
-    def __str__(self):
-        return "%s -> %s ### %s" % (self.lhs, " ".join(quoteattr(s[1:-1]) if s[0] == '"' else s  for s in self.rhs), self.fields)
-
-    def printRule(self):
-        return "%s -> %s" % (self.lhs, " ".join(quoteattr(s[1:-1]) if s[0] == '"' else s  for s in self.rhs))
-    
-class RuleSet(object):
-
-    def __init__(self, rulefilename):
-        self.rset = {}
-        for self.ruleid, line in enumerate(fileinput.input(rulefilename)):
-            rule = Rule(line)
-            if rule.lhs in self.rset:
-                self.rset[rule.lhs].append((self.ruleid, rule))
-            else:
-                self.rset[rule.lhs]=[(self.ruleid, rule)]
-
-    def getRuleNum(self):
-        return self.ruleid
-
 
 class Forest(object):
     ''' a collection of nodes '''
@@ -409,31 +376,30 @@ class Forest(object):
                 node.frags.append((lhs, rhs, height))
                 
                 if lhs in ruleset:
+
+                    ## TODO: comments needed
                     if lhs not in filtered_ruleset:
                         filtered_ruleset[lhs] = ruleset[lhs]
-                    for (ruleid, rule) in ruleset[lhs]:
+                    for rule in ruleset[lhs]:
                         rhsstr = [desymbol(x[1:-1]) for x in rule.rhs]
                         tailnodes = []
                         fvector = Vector(rule.fields) 
                         tfedge = Hyperedge(node, tailnodes, fvector, rhsstr)
                         tfedge.rule = rule
-                        tfedge.ruleid = ruleid
                         node.tfedges.append(tfedge)
                         
                 else: # add default translation rule (monotonic)
                     
-                    rhs = '"%s"' % node.word
-                    rule = Rule("%s -> %s ### %s" % (lhs, rhs, defaultfeats))
+                    rhs = ['"%s"' % node.word]
+                    rule = Rule(lhs, rhs, defaultfeats)
                     fvector = Vector(defaultfeats)
                     rhsstr = [node.word]
                     tailnodes = []
                     tfedge = Hyperedge(node, tailnodes, fvector, rhsstr)
                     
-                    Forest.globalruleid += 1
-                    tfedge.ruleid = Forest.globalruleid
                     # note: lhs is defined above "if"
                     tfedge.rule = rule
-                    ruleset[lhs] = [(Forest.globalruleid, rule)]
+                    ruleset.add_rule(rule)
                     node.tfedges.append(tfedge)
 
                 #append the default frag
@@ -463,7 +429,7 @@ class Forest(object):
                         if extlhs in ruleset:
                             if extlhs not in filtered_ruleset:
                                 filtered_ruleset[extlhs] = ruleset[extlhs]
-                            for (id, rule) in ruleset[extlhs]:
+                            for rule in ruleset[extlhs]:
                                 rhsstr = []
                                 tailnodes = extrhs
                                 for x in rule.rhs:
@@ -474,23 +440,19 @@ class Forest(object):
                                 fvector = Vector(rule.fields) 
                                 tfedge = Hyperedge(node, tailnodes, fvector, rhsstr)
                                 tfedge.rule = rule
-                                tfedge.ruleid = id
                                 node.tfedges.append(tfedge)
 
                     if len(node.tfedges) == 0:  # no translation hyperedge
                         
                         deflhs = "%s(%s)" % (node.label, " ".join(sub.label for sub in edge.subs))
-                        defrhs = " ".join("x%d" % i for i, _ in enumerate(edge.subs))
-                        defrule = Rule("%s -> %s ### %s" %\
-                                       (deflhs, defrhs, defaultfeats)) 
+                        defrhs = ["x%d" % i for i, _ in enumerate(edge.subs)] # N.B.: do not supply str
+                        defrule = Rule(deflhs, defrhs, defaultfeats)
                         deffvector = Vector(defaultfeats)
                         tailnodes = edge.subs
                         rhsstr = edge.subs
                         tfedge = Hyperedge(node, tailnodes, deffvector, rhsstr)
-                        Forest.globalruleid += 1
-                        tfedge.ruleid = Forest.globalruleid
                         tfedge.rule = defrule
-                        ruleset[deflhs] = [(Forest.globalruleid, rule)]
+                        ruleset.add_rule(defrule)
                         node.tfedges.append(tfedge)
                 #append the default frag
                 lhs = node.label
@@ -527,11 +489,11 @@ class Forest(object):
         for node in self:            
             print >> out, "%s\t%d" % (node.labelspan(separator="\t"), len(node.tfedges))
             for edge in node.tfedges:
-                if edge.ruleid in rulecache:
-                    rule_print = str(edge.ruleid)
+                if edge.rule.ruleid in rulecache:
+                    rule_print = str(edge.rule.ruleid)
                 else:
-                    rule_print = "%d %s" % (edge.ruleid, edge.rule.printRule())
-                    rulecache.add(edge.ruleid)
+                    rule_print = "%d %s" % (edge.rule.ruleid, repr(edge.rule))
+                    rulecache.add(edge.rule.ruleid)
 
                 tailstr = " ".join([quoteattr(x) if type(x) is str else x.iden for x in edge.lhsstr])
                 wordnum = sum([1 if type(x) is str else 0 for x in edge.lhsstr])
@@ -702,7 +664,7 @@ if __name__ == "__main__":
     
     if opts.ruleset is not None:
         ruleset = RuleSet(opts.ruleset)
-        Forest.globalruleid = ruleset.getRuleNum()
+        Forest.globalruleid = ruleset.rule_num()
 
     davidoraclebleus = Bleu()
 
@@ -792,7 +754,7 @@ if __name__ == "__main__":
             stime = time.time()
             filtered_ruleset = {}
             # TODO: I think it should return a new forest instead -- LH
-            forest.convert(ruleset.rset, filtered_ruleset)
+            forest.convert(ruleset, filtered_ruleset)
             forest.refs = [f.readline().strip() for f in reffiles]
             forest.dumptforest()
             etime = time.time()
