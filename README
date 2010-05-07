@@ -1,8 +1,8 @@
 TODOs:
 
-1) Rule class
+-1) Rule class										done by HM
 2) prune top-down filtering
-3) "\"" in rules
+-3) "\"" in rules								done by HM
 4) gflags and forest type
 -5) tree2forest checkin         done by LH
 6) print derivations
