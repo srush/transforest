@@ -444,19 +444,20 @@ class Forest(object):
             
             else:  # it's a non-terminal node
                 for edge in node.edges:
-                    baselhs = "%s(%s)" % (node.label, \
-                                          " ".join("x:@:%d" % i \
-                                                   for i, _ in enumerate(edge.subs)))
-                    
+                   # baselhs = "%s(%s)" % (node.label, \
+                   #                       " ".join("x:@:%d" % i \
+                   #                                for i, _ in enumerate(edge.subs)))
+                    baselhs = "%s(" % node.label
                     basefrags = [(baselhs, [], 1)]
+                    lastchild = len(edge.subs) - 1
                     for (id, sub) in enumerate(edge.subs):
                         oldfrags = basefrags
                         # cross-product
-                        basefrags = [Forest.combinetwofrags(oldfrag, frag, id) \
+                        basefrags = [Forest.combinetwofrags(oldfrag, frag, id, lastchild) \
                                      for oldfrag in oldfrags for frag in sub.frags]
                     
                     for extfrag in basefrags:
-                        extlhs, extrhs, extheight = extfrag  
+                        extlhs, extrhs, extheight = extfrag
                         if extheight <= 2:
                             node.frags.append(extfrag)
                         if extlhs in ruleset:
@@ -498,10 +499,12 @@ class Forest(object):
                 node.frags.append((lhs, rhs, height))
 
     @staticmethod
-    def combinetwofrags(basefrag, varfrag, id):
+    def combinetwofrags(basefrag, varfrag, id, lastchild):
         blhs, brhs, bheight = basefrag
         vlhs, vrhs, vheight = varfrag
-        lhs = blhs.replace("x:@:%d" % id, vlhs)
+        lhs = "%s %s" % (blhs, vlhs) if id>0 else "%s%s" % (blhs, vlhs)
+        if id == lastchild:
+            lhs += ")"
         rhs = []
         rhs.extend(brhs)
         rhs.extend(vrhs)
@@ -684,6 +687,7 @@ if __name__ == "__main__":
     optparser.add_option("-r", "--ruleset", dest="ruleset", type=str, help="translation rule set", default=None)
     optparser.add_option("-t", "--hgtype", dest="tranforest", action="store_true", help="type of forest p or t", default=False)
 ##    optparser.add_option("", "--refs", dest="refs", type=str, help="references", default=None)
+    optparser.add_option("", "--rulefilter", dest="rulefilter", action="store_true", help="filter rule set", default=False)
   
     (opts, args) = optparser.parse_args()
 
@@ -794,9 +798,11 @@ if __name__ == "__main__":
             etime = time.time()
             print >> logs, "sent: %s, len: %d, nodes: %d, tedges: %d, \tconvert time: %.2lf" % \
                   (forest.tag, len(forest), forest.size()[0], forest.tfsize()[1], etime - stime)
-            for (lhs, rules) in filtered_ruleset.iteritems():
-                for id, rule in rules:
-                    print >> logs, rule
+
+            if opts.rulefilter:
+                for (lhs, rules) in filtered_ruleset.iteritems():
+                    for id, rule in rules:
+                        print >> logs, rule
             
 #         if opts.compute_oracle:
 #             print >> logs,  "overall 1-best deriv bleu = %.4lf (%.2lf) score = %.4lf" \

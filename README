@@ -10,7 +10,7 @@ TODOs:
 8) GHKM unary rules
 9) convert forest should return a new forest, instead of in-place
 -10) refs                       done by LH
-
+-11) drop "str.replace"					done by HM
 
 Modified by liang on 2010/05/05:
 
