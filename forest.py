@@ -32,6 +32,8 @@ from tree import Tree
 from svector import Vector   # david's pyx, instead of my fvector
 from node_and_hyperedge import Node, Hyperedge
 
+from pattern_matching import PatternMatching
+
 from bleu import Bleu
 #import oracle
 
@@ -363,116 +365,6 @@ class Forest(object):
             forests.append(forest)
         return forests
 
-    def convert(self, ruleset, filtered_ruleset):
-        # default feats
-        defaultfeats = "gt_prob=-100 plhs=-100 text-lenght=0"
-        
-        for node in self:
-            
-            if node.is_terminal():  # a leaf node
-                lhs = '%s("%s")' % (node.label, node.word)
-                rhs = []
-                height = 1
-                node.frags.append((lhs, rhs, height))
-                
-                if lhs in ruleset:
-
-                    ## TODO: comments needed
-                    if lhs not in filtered_ruleset:
-                        filtered_ruleset[lhs] = ruleset[lhs]
-                    for rule in ruleset[lhs]:
-                        rhsstr = [desymbol(x[1:-1]) for x in rule.rhs]
-                        tailnodes = []
-                        fvector = Vector(rule.fields) 
-                        tfedge = Hyperedge(node, tailnodes, fvector, rhsstr)
-                        tfedge.rule = rule
-                        node.tfedges.append(tfedge)
-                        
-                else: # add default translation rule (monotonic)
-                    
-                    rhs = ['"%s"' % node.word]
-                    rule = Rule(lhs, rhs, defaultfeats)
-                    fvector = Vector(defaultfeats)
-                    rhsstr = [node.word]
-                    tailnodes = []
-                    tfedge = Hyperedge(node, tailnodes, fvector, rhsstr)
-                    
-                    # note: lhs is defined above "if"
-                    tfedge.rule = rule
-                    ruleset.add_rule(rule)
-                    node.tfedges.append(tfedge)
-
-                #append the default frag
-                lhs = node.label
-                rhs = [node]
-                height = 0
-                node.frags.append((lhs, rhs, height))
-            
-            else:  # it's a non-terminal node
-                for edge in node.edges:
-                   # baselhs = "%s(%s)" % (node.label, \
-                   #                       " ".join("x:@:%d" % i \
-                   #                                for i, _ in enumerate(edge.subs)))
-                    baselhs = "%s(" % node.label
-                    basefrags = [(baselhs, [], 1)]
-                    lastchild = len(edge.subs) - 1
-                    for (id, sub) in enumerate(edge.subs):
-                        oldfrags = basefrags
-                        # cross-product
-                        basefrags = [Forest.combinetwofrags(oldfrag, frag, id, lastchild) \
-                                     for oldfrag in oldfrags for frag in sub.frags]
-                    
-                    for extfrag in basefrags:
-                        extlhs, extrhs, extheight = extfrag
-                        if extheight <= 2:
-                            node.frags.append(extfrag)
-                        if extlhs in ruleset:
-                            if extlhs not in filtered_ruleset:
-                                filtered_ruleset[extlhs] = ruleset[extlhs]
-                            for rule in ruleset[extlhs]:
-                                rhsstr = []
-                                tailnodes = extrhs
-                                for x in rule.rhs:
-                                    if x[0] == '"':  # word
-                                        rhsstr.append(desymbol(x[1:-1]))
-                                    else:
-                                        rhsstr.append(tailnodes[int(x.split('x')[1])])    
-                                fvector = Vector(rule.fields) 
-                                tfedge = Hyperedge(node, tailnodes, fvector, rhsstr)
-                                tfedge.rule = rule
-                                node.tfedges.append(tfedge)
-
-                    if len(node.tfedges) == 0:  # no translation hyperedge
-                        
-                        deflhs = "%s(%s)" % (node.label, " ".join(sub.label for sub in edge.subs))
-                        defrhs = ["x%d" % i for i, _ in enumerate(edge.subs)] # N.B.: do not supply str
-                        defrule = Rule(deflhs, defrhs, defaultfeats)
-                        deffvector = Vector(defaultfeats)
-                        tailnodes = edge.subs
-                        rhsstr = edge.subs
-                        tfedge = Hyperedge(node, tailnodes, deffvector, rhsstr)
-                        tfedge.rule = defrule
-                        ruleset.add_rule(defrule)
-                        node.tfedges.append(tfedge)
-                #append the default frag
-                lhs = node.label
-                rhs = [node]
-                height = 0
-                node.frags.append((lhs, rhs, height))
-
-    @staticmethod
-    def combinetwofrags(basefrag, varfrag, id, lastchild):
-        blhs, brhs, bheight = basefrag
-        vlhs, vrhs, vheight = varfrag
-        lhs = "%s %s" % (blhs, vlhs) if id>0 else "%s%s" % (blhs, vlhs)
-        if id == lastchild:
-            lhs += ")"
-        rhs = []
-        rhs.extend(brhs)
-        rhs.extend(vrhs)
-        height = bheight if bheight > (vheight + 1) else (vheight+1)
-        return (lhs, rhs, height) if height <= 3 else None
-
     def dumptforest(self, out=sys.stdout):
         #print "dump translation forest"
         if type(out) is str:
@@ -753,10 +645,16 @@ if __name__ == "__main__":
             #print "start to convert pforest to forest "
             stime = time.time()
             filtered_ruleset = {}
+            # default fields
+            deffields = "gt_prob=-100 plhs=-100 text-lenght=0"
             # TODO: I think it should return a new forest instead -- LH
-            forest.convert(ruleset, filtered_ruleset)
-            forest.refs = [f.readline().strip() for f in reffiles]
-            forest.dumptforest()
+            pm = PatternMatching(forest, ruleset, \
+                                 filtered_ruleset, deffields,
+                                 opts.rulefilter)
+            tforest = pm.convert()
+            
+            tforest.refs = [f.readline().strip() for f in reffiles]
+            tforest.dumptforest()
             etime = time.time()
             print >> logs, "sent: %s, len: %d, nodes: %d, tedges: %d, \tconvert time: %.2lf" % \
                   (forest.tag, len(forest), forest.size()[0], forest.tfsize()[1], etime - stime)
