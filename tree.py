@@ -126,8 +126,9 @@ class Tree(object):
     def set_root(self, is_root):
         self._root = is_root
     
-    def dostr(self):
+    def dostr(self):  #no sub attribute in translation forest
         if self.is_terminal():
+            
 #            print "hi", self.word, desymbol(self.word)
 #            print "ho", self.label, desymbol(self.label)
             s = "(%s %s)" % (self.label, self.word)

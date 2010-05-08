@@ -68,6 +68,16 @@ class Forest(object):
         ''' return (num_nodes, num_tfedges) pair '''
         return len(self.nodes), self.num_edges 
 
+    def update_nodes(self, reachable):
+        newnodes = {}
+        newnodeorder = []
+        for node in self:
+            if node.iden in reachable:
+                newnodes[node.iden] = self.nodes[node.iden]
+                newnodeorder.append(node)
+        self.nodes = newnodes
+        self.nodeorder = newnodeorder
+        
     def __init__(self, num, sentence, cased_sent, hgtype, tag=""):
         self.tag = tag
         self.num = num
@@ -89,9 +99,6 @@ class Forest(object):
 
         self.weights = base_weights # baseline
 
-    def settype(self, hgtype):
-        self.type = hgtype
-
     def __len__(self):
         "sentence length"
         return self.len
@@ -103,6 +110,7 @@ class Forest(object):
         node.forest = self ## important backpointer!
         node.wrd_seq = self.sent[node.span[0]: node.span[1]]
 
+    
     def rehash(self):
         ''' after pruning'''
 
@@ -275,7 +283,7 @@ class Forest(object):
 
                     for x in tails:
                         if x[0]=='"': # word
-                            lhsstr.append(desymbol(x[1:-1]))  ## desymbol here and only here; dump will call quoteattr
+                            lhsstr.append(desymbol(x[1:-1]))  ## desymbol here and only here; ump will call quoteattr
                         else: # variable
 
                             assert x in forest.nodes, "BAD TOPOL ORDER: node #%s is referred to " % x + \

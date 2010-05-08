@@ -19,6 +19,9 @@ class PatternMatching(object):
         self.filtered_ruleset = filtered_ruleset
         self.deffields = deffields
         self.filter = filter
+
+        # store all the descendants of a node {node, (descendant nodes)}
+        self.descendants = defaultdict(lambda : set())
     
     def lexfrag(self, node):
         '''add lexical frag (lhs, rsh, height) = (PU("."), [], 1)'''
@@ -37,7 +40,7 @@ class PatternMatching(object):
         forest = self.forest
         
         for node in forest:
-            
+
             if node.is_terminal():  # a leaf node
                 #append the default frag (lhs, rhs, height) = (PU, node, 0)
                 node.frags.append(self.deffrag(node))
@@ -52,9 +55,32 @@ class PatternMatching(object):
                 node.frags.append(self.deffrag(node))
                 # add non-terminal translation hyperedges
                 self.add_nonter_th(node)
-                
+
+        self.remove_unreach()
+        
         return forest
-    
+
+    def remove_unreach(self):
+        rootid = self.forest.root.iden
+        descendants = self.descendants
+
+        #reachable node set
+        reachable = set([rootid])
+        expendset = set([rootid])
+        expended = set()
+        print "start to expend ..."
+        while len(expendset) > 0:
+            exp = expendset.pop()
+            expended.add(exp)
+            curdes = descendants[exp]
+            reachable |= curdes
+            expendset |= curdes
+            expendset -= expended
+            
+        #print >> logs, "reachable set"
+        #print >> logs, reachable
+        self.forest.update_nodes(reachable)    
+            
     @staticmethod
     def combinetwofrags(basefrag, varfrag, id, lastchild):
         '''combine two frags'''
@@ -123,6 +149,10 @@ class PatternMatching(object):
                         
                 # add translation hyperedges
                 if extlhs in ruleset:
+                    for des in extrhs:
+                        self.descendants[node.iden].add(des.iden) #unit(set(extrhs))
+                    #print self.descendants[node.iden]
+                    
                     rules = ruleset[extlhs]
                             
                     # add rules to filtered_ruleset
@@ -140,6 +170,8 @@ class PatternMatching(object):
                         tfedges.append(tfedge)
 
             if len(tfedges) == 0:  # no translation hyperedge
+                for des in edge.subs:
+                    self.descendants[node.iden].add(des.iden) #unit(set(edge.subs))
                 # add a default translation hyperedge
                 deflhs = "%s(%s)" % (node.label, " ".join(sub.label for sub in edge.subs))
                 defrhs = ["x%d" % i for i, _ in enumerate(edge.subs)] # N.B.: do not supply str

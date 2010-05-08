@@ -1,19 +1,18 @@
 TODOs:
 
--1) Rule class										done by HM
-2) prune top-down filtering
+-1) Rule class									done by HM
+-2) prune top-down filtering    done by HM
 -3) "\"" in rules								done by HM
 4) gflags and forest type
 -5) tree2forest checkin         done by LH
 6) print derivations
 -7) text-length feature         done by HM
 8) GHKM unary rules
-9) convert forest should return a new forest, instead of in-place
 -10) refs                       done by LH
 -11) drop "str.replace"					done by HM
 12) fix bleu.py
 13) add back uni-lexical 1-count rules ("..." -> )
--14) pattern-match returns an inside replaced forest  by HM
+-14) pattern-match returns an in-placed forest  by HM
 -15) merge dump and dumptf into a single function dump    by HM
 
 Modified by liang on 2010/05/05:
