@@ -9,7 +9,7 @@ from utility import quoteattr
 
 class Rule(object):
 
-    __slots__ = "lhs", "rhs", "fields", "ruleid", "desymbolrhs"
+    __slots__ = "lhs", "rhs", "fields", "ruleid"
 
     def __init__(self, lhs, rhs, fields):
         self.lhs = lhs

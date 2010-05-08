@@ -13,6 +13,8 @@ TODOs:
 -11) drop "str.replace"					done by HM
 12) fix bleu.py
 13) add back uni-lexical 1-count rules ("..." -> )
+-14) pattern-match returns an inside replaced forest  by HM
+-15) merge dump and dumptf into a single function dump    by HM
 
 Modified by liang on 2010/05/05:
 

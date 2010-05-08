@@ -57,17 +57,16 @@ class Forest(object):
         '''must be deep!'''
         return copy.deepcopy(self)
         
+  #  def size(self):
+  #      ''' return (num_nodes, num_edges) pair '''
+  #      return len(self.nodes), self.num_edges ##sum([len(node.edges) for node in self.nodes.values()])
+
+    def compute_size(self):
+        self.num_edges = sum([len(node.edges) for node in self])
+
     def size(self):
-        ''' return (num_nodes, num_edges) pair '''
-        return len(self.nodes), self.num_edges ##sum([len(node.edges) for node in self.nodes.values()])
-
-    def tfsize(self):
-        ''' return (num_nodes, num_tfedges) pair '''        
-        self.num_tfedges = 0
-        for node in self:
-            self.num_tfedges += len(node.tfedges)
-
-        return len(self.nodes), self.num_tfedges ##sum([len(node.tfedges) for node in self.nodes.values()])
+        ''' return (num_nodes, num_tfedges) pair '''
+        return len(self.nodes), self.num_edges 
 
     def __init__(self, num, sentence, cased_sent, hgtype, tag=""):
         self.tag = tag
@@ -365,35 +364,6 @@ class Forest(object):
             forests.append(forest)
         return forests
 
-    def dumptforest(self, out=sys.stdout):
-        #print "dump translation forest"
-        if type(out) is str:
-            out = open(out, "wt")
-
-        # CAUTION! use original cased_sent!
-        print >> out, "%s\t%s" % (self.tag, " ".join(self.cased_sent))
-        print >> out, len(self.refs)
-        for ref in self.refs:
-            print >> out, ref
-        
-        rulecache = set()    
-        print >> out, "%d\t%d" % self.tfsize()  # nums of nodes and edges
-        for node in self:            
-            print >> out, "%s\t%d" % (node.labelspan(separator="\t"), len(node.tfedges))
-            for edge in node.tfedges:
-                if edge.rule.ruleid in rulecache:
-                    rule_print = str(edge.rule.ruleid)
-                else:
-                    rule_print = "%d %s" % (edge.rule.ruleid, repr(edge.rule))
-                    rulecache.add(edge.rule.ruleid)
-
-                tailstr = " ".join([quoteattr(x) if type(x) is str else x.iden for x in edge.lhsstr])
-                wordnum = sum([1 if type(x) is str else 0 for x in edge.lhsstr])
-                print >> out, "\t%s ||| %s ||| %s text-length=%d" \
-                            % (tailstr, rule_print, edge.fvector, wordnum)
-                     
-        print >> out  ## last blank line
-    
     def dump(self, out=sys.stdout):
         '''output to stdout'''
         # wsj_00.00       No , it was n't Black Monday .
@@ -432,13 +402,13 @@ class Forest(object):
                 is_oracle = "*" if (edge is oracle_edge) else ""
 
                 ## caution: pruning might change caching, so make sure rule is defined in the output forest
-                if edge.ruleid in rulecache:
-                    rule_print = str(edge.ruleid)
+                if edge.rule.ruleid in rulecache:
+                    rule_print = str(edge.rule.ruleid)
                 else:
-                    rule_print = "%s %s" % (edge.ruleid, self.rules[edge.ruleid])
-                    rulecache.add(edge.ruleid)
+                    rule_print = "%s %s" % (edge.rule.ruleid, repr(edge.rule)) #self.rules[edge.ruleid])
+                    rulecache.add(edge.rule.ruleid)
 
-                tailstr = " ".join([quoteattr(x) if type(x) is str else x.iden for x in edge.lhsstr])
+                tailstr = " ".join([x if type(x) is str else x.iden for x in edge.lhsstr])
                 print >> out, "\t%s%s ||| %s ||| %s" \
                             % (is_oracle, tailstr, rule_print, edge.fvector)
                      
@@ -641,24 +611,25 @@ if __name__ == "__main__":
                     print >> logs,  "overall my      fear bleu = %.4lf (%.2lf) score = %.4lf" \
                           % (myfearbleus.score_ratio() + (myfearscores/(i+1),))
         else:
-            #parse forest  TODO: convert pforest to tforest by pattern matching 
-            #print "start to convert pforest to forest "
+            # convert pforest to tforest by pattern matching 
             stime = time.time()
             filtered_ruleset = {}
             # default fields
             deffields = "gt_prob=-100 plhs=-100 text-lenght=0"
-            # TODO: I think it should return a new forest instead -- LH
+            # inside replace
             pm = PatternMatching(forest, ruleset, \
                                  filtered_ruleset, deffields,
                                  opts.rulefilter)
-            tforest = pm.convert()
-            
-            tforest.refs = [f.readline().strip() for f in reffiles]
-            tforest.dumptforest()
-            etime = time.time()
-            print >> logs, "sent: %s, len: %d, nodes: %d, tedges: %d, \tconvert time: %.2lf" % \
-                  (forest.tag, len(forest), forest.size()[0], forest.tfsize()[1], etime - stime)
+            forest = pm.convert()
+            forest.compute_size()
+            forest.refs = [f.readline().strip() for f in reffiles]
+            forest.dump()
 
+            etime = time.time()
+            print >> logs, "sent: %s, len: %d, nodes: %d, edges: %d, \tconvert time: %.2lf" % \
+                  (forest.tag, len(forest), forest.size()[0], forest.size()[1], etime - stime)
+
+            # dump filtered rule set
             if opts.rulefilter:
                 for (lhs, rules) in filtered_ruleset.iteritems():
                     for id, rule in rules:
