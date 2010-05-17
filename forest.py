@@ -566,6 +566,7 @@ if __name__ == "__main__":
                     hyp = (hyp)
                     hyp_bleu = forest.bleu.rescore(hyp)
                     print >> logs, "k=%d\tscore=%.4lf\tbleu+1=%.4lf\tlenratio=%.2lf\n%s" % (k+1, score, hyp_bleu, forest.bleu.ratio(), hyp)
+                    print hyp # to stdout
                     if k == 0:
                         onebestscores += score
                         onebestbleus += forest.bleu.copy()

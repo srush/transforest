@@ -18,15 +18,12 @@ The reason for breaking the BLEU computation into three phases cook_refs(), cook
 
 import optparse
 import sys, math, re, xml.sax.saxutils
+from collections import defaultdict
+
+import gflags as flags
+FLAGS=flags.FLAGS
 
 logs = sys.stderr
-
-verbose = False
-preserve_case = False
-eff_ref_len = "closest" ## lhuang: in test, use closest, in oracle, use average
-nist_tokenize = False # to be consistent with bleu+1
-clip_len = False
-show_length_ratio = False
 
 normalize1 = [
     ('<skipped>', ''),         # strip "skipped" tags
@@ -65,15 +62,15 @@ def precook(s, n=4):
     either cook_refs or cook_test. This is optional: cook_refs and cook_test
     can take string arguments as well."""
     if type(s) is str:
-        if nist_tokenize:
+        if FLAGS.nist_tokenize:
             words = normalize(s)
         else:
             words = s.split()
-        counts = {}
+        counts = defaultdict(int)
         for k in xrange(1,n+1):
             for i in xrange(len(words)-k+1):
                 ngram = tuple(words[i:i+k])
-                counts[ngram] = counts.get(ngram, 0)+1
+                counts[ngram] += 1
         return (len(words), counts)
     else:
         return s
@@ -120,7 +117,7 @@ def cook_test(test, (reflen, refmaxcounts), eff=None, n=4):
 
 ##    result["reflen"] = reflen ## keep all, and let scorer decide eff_len
 
-    if clip_len:
+    if FLAGS.clip_len:
         result["testlen"] = min(testlen, result["reflen"])
     else:
         result["testlen"] = testlen
@@ -323,88 +320,52 @@ class Bleu(object):
 if __name__ == "__main__":
     import getopt, itertools
 
-    split = None
-    first = None # +inf
-    new = False
+    flags.DEFINE_integer("first", None, "first N sentences")
+    flags.DEFINE_boolean("show_lenratio", True, "show length ratio", short_name="l")
+    flags.DEFINE_boolean("preserve_case", True, "preserve case", short_name="c")
+    flags.DEFINE_boolean("new", True, "use new class (instead of david)")
+    flags.DEFINE_boolean("verbose", False, "verbose output")
+    flags.DEFINE_boolean("nist_tokenize", False, "nist tokenize")
+    flags.DEFINE_boolean("clip_len", False, "clip length")
+    flags.DEFINE_string("eff_ref_len", "closest", "effective length ratio: closest, average, shortest")    
+    
+    argv = FLAGS(sys.argv)
 
-    (opts,args) = getopt.getopt(sys.argv[1:], "r:ctplvs:f:", ["len=", "new"])
-    for (opt,parm) in opts:
-        if opt == "-r":
-            eff_ref_len = parm
-        elif opt == "-c":
-            preserve_case = True
-        elif opt == "-t":
-            nist_tokenize = False
-        elif opt == "-p":
-            clip_len = True
-        elif opt == "-l":
-            show_length_ratio = True
-        elif opt == "-v":
-            verbose = True            
-        elif opt == "-f":
-            first = int(parm)
-        elif opt == "--len":
-            eff_ref_len = parm
-            assert parm in ["closest", "average", "shortest"], "length option \"%s\" not supported" % parm
-        elif opt == "--new":
-            new = True # new class-based implementation
-        elif opt == "-s":
-            # lhuang
-            split = int(parm)
-            assert split > 3, "too few splits (should be > 3)"
-            print >> sys.stderr, "splitting into %d parts (%d for train, %d for dev1, %d for dev2)" % \
-                  (split, split-2, 1, 1)
-
-            dev1s = []
-            dev2s = []
-            
-
-    if args[0] == '-':
+    if argv[0] == '-':
         infile = sys.stdin
     else:
-        infile = file(args[0])
+        infile = file(argv[1]) ## [0] is now ./bleu.py
 
+    bleus = Bleu(option=FLAGS.eff_ref_len)
+
+    ## STEP 1: READ IN REFS
     refs = []
-    reffilenames = args[1:]
-
-    bleus = Bleu(option=eff_ref_len)
+    reffilenames = argv[2:]
     for i, lines in enumerate(itertools.izip(*[file(filename) for filename in reffilenames])):
         # lhuang: don't split refs; split tests
-        if new:
+        if FLAGS.new:
             refs.append(lines)
         else:
-            refs.append(cook_refs(lines, eff_ref_len))
-        if first is not None and i == first-1:
+            refs.append(cook_refs(lines, FLAGS.eff_ref_len))
+        if FLAGS.first is not None and i == FLAGS.first-1:
             break
-        
+
+    ## STEP 2: READ IN TESTS
     tests = []
     #for (i,line) in enumerate(infile):
     for i, ref in enumerate(refs):
         line = infile.readline() # blank lines if infile is short
         if line == "": # EOF (blank lines are "\n")
             break
-        if split is None:
-            if new:
-                bleus += (line, ref)
-            else:
-                tests.append(cook_test(line, ref, eff_ref_len))
+        if FLAGS.new:
+            bleus += (line, ref)
         else:
-            if i % split == split - 2:
-                dev1s.append(cook_test(line, ref, eff_ref_len))
-##                print line.strip()
-            elif i % split == split - 1:
-                dev2s.append(cook_test(line, ref, eff_ref_len))
-            else:
-                tests.append(cook_test(line, ref, eff_ref_len))
-
-    if split is None:
-        if new:
-            bleu = bleus.fscore(option=eff_ref_len)
-            ratio = bleus.ratio()
-        else:
-            bleu, ratio = score_cooked(tests)
-        print >> logs, "bleu = %.4lf, length_ratio = %.2lf (%d sentences, length option \"%s\")" \
-              % (bleu, ratio, len(tests) if not new else bleus.size(), eff_ref_len)
-    else:        
-        print >> logs, "train=%.4lf (%.2lf), dev1=%.4lf (%.2lf), dev2=%.4lf (%.2lf)" % \
-                    (score_cooked(tests) + score_cooked(dev1s) + score_cooked(dev2s))
+            tests.append(cook_test(line, ref, FLAGS.eff_ref_len))
+            
+    if FLAGS.new:
+        bleu = bleus.fscore(option=FLAGS.eff_ref_len)
+        ratio = bleus.ratio()
+    else:
+        bleu, ratio = score_cooked(tests)
+    print >> logs, "bleu = %.4lf, length_ratio = %.2lf (%d sentences, length option \"%s\")" \
+          % (bleu, ratio, len(tests) if not FLAGS.new else bleus.size(), FLAGS.eff_ref_len)

@@ -41,8 +41,8 @@ class RuleSet(defaultdict):
 
     def __init__(self, rulefilename):
         '''read in rules from a file'''
-        self.ruleid = 0
         defaultdict.__init__(self, list) # N.B. superclass
+        self.ruleid = 0
         print >> logs, "reading rules from %s ..." % rulefilename
         otime = time.time()
         bad = 0
