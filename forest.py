@@ -649,7 +649,9 @@ if __name__ == "__main__":
             if i+1 >= int(opts.first):
                 break
         
-
+    print >> logs, "Total converting time: %.2lf" % allctime
+    print >> logs, "Avg   converting time: %.2lf" % allctime/i
+    
     # dump filtered rule set
     if opts.rulefilter:
         for (lhs, rules) in filtered_ruleset.iteritems():

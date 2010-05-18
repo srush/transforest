@@ -68,7 +68,7 @@ class PatternMatching(object):
         reachable = set([rootid])
         expendset = set([rootid])
         expended = set()
-        print "start to expend ..."
+        # print "start to expend ..."
         while len(expendset) > 0:
             exp = expendset.pop()
             expended.add(exp)
