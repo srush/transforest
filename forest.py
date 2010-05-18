@@ -546,6 +546,7 @@ if __name__ == "__main__":
     onebestscores = 0
     onebestbleus = Bleu()
     filtered_ruleset = {}
+    allctime = 0
  
     for i, forest in enumerate(Forest.load("-", hgtype)):
  
@@ -637,7 +638,7 @@ if __name__ == "__main__":
             etime = time.time()
             print >> logs, "sent: %s, len: %d, nodes: %d, edges: %d, \tconvert time: %.2lf" % \
                   (forest.tag, len(forest), forest.size()[0], forest.size()[1], etime - stime)
-
+            allctime += (etime - stime)
             
 #         if opts.compute_oracle:
 #             print >> logs,  "overall 1-best deriv bleu = %.4lf (%.2lf) score = %.4lf" \
@@ -650,7 +651,7 @@ if __name__ == "__main__":
                 break
         
     print >> logs, "Total converting time: %.2lf" % allctime
-    print >> logs, "Avg   converting time: %.2lf" % allctime/i
+    #print >> logs, "Avg   converting time: %.2lf" % float(allctime)/float(i)
     
     # dump filtered rule set
     if opts.rulefilter:
