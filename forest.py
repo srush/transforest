@@ -415,10 +415,10 @@ class Forest(object):
                 else:
                     rule_print = "%s %s" % (edge.rule.ruleid, repr(edge.rule)) #self.rules[edge.ruleid])
                     rulecache.add(edge.rule.ruleid)
-
+                wordnum = sum([1 if type(x) is str else 0 for x in edge.lhsstr])
                 tailstr = " ".join([x if type(x) is str else x.iden for x in edge.lhsstr])
-                print >> out, "\t%s%s ||| %s ||| %s" \
-                            % (is_oracle, tailstr, rule_print, edge.fvector)
+                print >> out, "\t%s%s ||| %s ||| %s text-length=%d" \
+                            % (is_oracle, tailstr, rule_print, edge.fvector, wordnum)
                      
         print >> out  ## last blank line
 
