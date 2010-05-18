@@ -23,6 +23,12 @@ from collections import defaultdict
 import gflags as flags
 FLAGS=flags.FLAGS
 
+flags.DEFINE_boolean("preserve_case", True, "preserve case", short_name="c")
+flags.DEFINE_boolean("nist_tokenize", False, "nist tokenize")
+flags.DEFINE_boolean("clip_len", False, "clip length")
+flags.DEFINE_string("eff_ref_len", "closest", "effective length ratio: closest, average, shortest", short_name="len")    
+flags.DEFINE_boolean("latin", True, "remove non-latin_1 chars")
+
 logs = sys.stderr
 
 normalize1 = [
@@ -155,7 +161,7 @@ def score_cooked(allcomps, n=4, addprec=0):
         for k in xrange(n):
             prec = float(totalcomps['correct'][k]+addprec)/(totalcomps['guess'][k]+addprec)
             sys.stderr.write("%d-gram precision:  %s\n" % (k+1,prec))
-    if verbose or show_length_ratio:
+    if verbose:
         sys.stderr.write("length ratio:      %s\n" % (float(totalcomps['testlen'])/totalcomps['reflen']))
         
     return bleu, len_ratio
@@ -252,7 +258,7 @@ class Bleu(object):
     def _single_reflen(self, reflens, option=None, testlen=None):
         
         if option == "shortest":
-            self._reflen = min(reflens)
+            reflen = min(reflens)
         elif option == "average":
             reflen = float(sum(reflens))/len(reflens)
         elif option == "closest":
@@ -261,7 +267,6 @@ class Bleu(object):
             assert False, "unsupported reflen option %s" % option
 
         return reflen
-
         
     def compute_score(self, option=None, addprec=None):
         if self._score is not None:
@@ -314,58 +319,52 @@ class Bleu(object):
 
     ## real interface
     score = fscore = compute_score
-    
 
+def is_latin(s, lineid=0):
+    try:
+        s.decode('utf-8').encode('latin_1')
+        return True
+    except:
+        print >> logs, "WARNING: non-latin word removed from line %d: %s" % (lineid, s)
+        return False    
+
+def remove_nonlatin(line, lineid=0):
+    return " ".join(w for w in line.split() if is_latin(w, lineid))
 
 if __name__ == "__main__":
-    import getopt, itertools
+    import itertools, fileinput
 
-    flags.DEFINE_integer("first", None, "first N sentences")
-    flags.DEFINE_boolean("show_lenratio", True, "show length ratio", short_name="l")
-    flags.DEFINE_boolean("preserve_case", True, "preserve case", short_name="c")
-    flags.DEFINE_boolean("new", True, "use new class (instead of david)")
-    flags.DEFINE_boolean("verbose", False, "verbose output")
-    flags.DEFINE_boolean("nist_tokenize", False, "nist tokenize")
-    flags.DEFINE_boolean("clip_len", False, "clip length")
-    flags.DEFINE_string("eff_ref_len", "closest", "effective length ratio: closest, average, shortest")    
+    flags.DEFINE_integer("first", 100000, "first N sentences")
     
     argv = FLAGS(sys.argv)
 
-    if argv[0] == '-':
-        infile = sys.stdin
-    else:
-        infile = file(argv[1]) ## [0] is now ./bleu.py
+    infile = fileinput.input(argv[1]) # "-" OK
+    reffilenames = argv[2:]
 
     bleus = Bleu(option=FLAGS.eff_ref_len)
 
-    ## STEP 1: READ IN REFS
-    refs = []
-    reffilenames = argv[2:]
-    for i, lines in enumerate(itertools.izip(*[file(filename) for filename in reffilenames])):
-        # lhuang: don't split refs; split tests
-        if FLAGS.new:
-            refs.append(lines)
-        else:
-            refs.append(cook_refs(lines, FLAGS.eff_ref_len))
-        if FLAGS.first is not None and i == FLAGS.first-1:
+    ## STEP 0: READ IN TESTS
+    testlines = []
+    for i, line in enumerate(infile, 1):
+        testlines.append(line)
+        if i >= FLAGS.first:
             break
 
-    ## STEP 2: READ IN TESTS
-    tests = []
-    #for (i,line) in enumerate(infile):
-    for i, ref in enumerate(refs):
-        line = infile.readline() # blank lines if infile is short
-        if line == "": # EOF (blank lines are "\n")
+    ## STEP 1: READ IN REFS
+    refs = []
+    for i, lines in enumerate(itertools.izip(*[file(filename) for filename in reffilenames]), 1):
+        refs.append(lines)
+        if i >= len(testlines) or i >= FLAGS.first:
             break
-        if FLAGS.new:
-            bleus += (line, ref)
-        else:
-            tests.append(cook_test(line, ref, FLAGS.eff_ref_len))
-            
-    if FLAGS.new:
-        bleu = bleus.fscore(option=FLAGS.eff_ref_len)
-        ratio = bleus.ratio()
-    else:
-        bleu, ratio = score_cooked(tests)
-    print >> logs, "bleu = %.4lf, length_ratio = %.2lf (%d sentences, length option \"%s\")" \
-          % (bleu, ratio, len(tests) if not FLAGS.new else bleus.size(), FLAGS.eff_ref_len)
+
+    ## STEP 2: COOK TESTS
+    for i, (testline, ref) in enumerate(zip(testlines, refs), 1):
+        if FLAGS.latin:
+            testline = remove_nonlatin(testline, i)            
+        bleus += (testline, ref)
+
+    ## STEP 3: EVALUATE
+    bleu = bleus.fscore(option=FLAGS.eff_ref_len)
+    ratio = bleus.ratio()
+    print >> logs, "bleu%s = %.4lf, length_ratio = %.2lf (%d sentences, length option \"%s\")" \
+          % ("+1" if bleus.size() == 1 else "", bleu, ratio, bleus.size(), FLAGS.eff_ref_len)
