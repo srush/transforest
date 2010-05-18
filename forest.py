@@ -545,7 +545,8 @@ if __name__ == "__main__":
     myfearscores = 0
     onebestscores = 0
     onebestbleus = Bleu()
-    
+    filtered_ruleset = {}
+ 
     for i, forest in enumerate(Forest.load("-", hgtype)):
  
 #         if forest.tag == "1":
@@ -622,7 +623,6 @@ if __name__ == "__main__":
         else:
             # convert pforest to tforest by pattern matching 
             stime = time.time()
-            filtered_ruleset = {}
             # default fields
             deffields = "gt_prob=-100 plhs=-100 text-lenght=0"
             # inside replace
@@ -638,11 +638,6 @@ if __name__ == "__main__":
             print >> logs, "sent: %s, len: %d, nodes: %d, edges: %d, \tconvert time: %.2lf" % \
                   (forest.tag, len(forest), forest.size()[0], forest.size()[1], etime - stime)
 
-            # dump filtered rule set
-            if opts.rulefilter:
-                for (lhs, rules) in filtered_ruleset.iteritems():
-                    for id, rule in rules:
-                        print >> logs, rule
             
 #         if opts.compute_oracle:
 #             print >> logs,  "overall 1-best deriv bleu = %.4lf (%.2lf) score = %.4lf" \
@@ -654,3 +649,9 @@ if __name__ == "__main__":
             if i+1 >= int(opts.first):
                 break
         
+
+    # dump filtered rule set
+    if opts.rulefilter:
+        for (lhs, rules) in filtered_ruleset.iteritems():
+            for rule in rules:
+                print >> logs, rule
