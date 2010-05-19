@@ -24,6 +24,9 @@ from forest to target words:
 
 use target words to prune LM:
 
+Modified by haitao on 2010/05/19:
+	add rule filter in rule.py
+	cat rules.id_large1.prob | ./rule.py 1>frules 2>log
 
 Modified by liang on 2010/05/05:
 

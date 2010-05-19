@@ -665,4 +665,4 @@ if __name__ == "__main__":
     if opts.rulefilter:
         for (lhs, rules) in filtered_ruleset.iteritems():
             for rule in rules:
-                print >> logs, rule
+                print >> logs, "%s" % rule

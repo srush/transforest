@@ -35,6 +35,7 @@ class Rule(object):
         return "%s -> %s" % (self.lhs, \
                              " ".join(quoteattr(s[1:-1]) if s[0] == '"' else s \
                                       for s in self.rhs))
+
     
 class RuleSet(defaultdict):
     ''' map from lhs to a list of Rule '''
@@ -64,3 +65,33 @@ class RuleSet(defaultdict):
  
     def rule_num(self):
         return self.ruleid
+
+if __name__ == "__main__":
+    import optparse
+    optparser = optparse.OptionParser(usage="usage: rule.py 1>filtered.rules 2>bad.rules")
+    
+    print >> logs, "start to filting rule set ..."
+    otime = time.time()
+    bad1 = 0  # ratio > 3
+    bad2 = 0  # best 100
+    bad = 0   # rhs == null
+    filteredrs = defaultdict(list)
+    for i, line in enumerate(sys.stdin, 1):
+        rule = Rule.parse(line)
+        if rule is not None:
+            ratioce = float(len(rule.lhs.split()))/float(len(rule.rhs))
+            ratioec = float(len(rule.rhs))/float(len(rule.lhs.split()))
+            if ratioec > 6 or ratioce > 4:
+                bad1 += 1
+                print >> logs, "Bad Ratio: %s" % line
+            else:
+                filteredrs[rule.lhs].append(rule)
+        else:
+            bad += 1
+
+    for (lhs, rules) in filteredrs.iteritems():
+        bad2 += ((len(rules) - 100) if len(rules)>100 else 0)
+        rules = rules[:100]
+        for rule in rules:
+            print "%s" % str(rule)
+    print >> logs, "\ntotal %d rules (%d rhs=null; %d ratio>3; %d rhs>100)filtered in %.2lf secs" % (i, bad, bad1, bad2, time.time() - otime)
