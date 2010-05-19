@@ -301,11 +301,15 @@ class Forest(object):
 ##                    remove_blacklist(fvector)
 
                     edge = Hyperedge(node, tailnodes, fvector, lhsstr)
-                    edge.rule = rule
 
                     ## new
                     x = rule.split()
                     edge.ruleid = int(x[0])
+                    if len(x) > 1:
+                        edge.rule = Rule.parse(" ".join(x[1:]) + " ### " + fields)
+                    else:
+                        edge.rule = None # cahced rule; don't care here
+
                     if len(x) > 1:
                         forest.rules[edge.ruleid] = " ".join(x[1:]) #, None)
                         
@@ -409,14 +413,18 @@ class Forest(object):
 
                 is_oracle = "*" if (edge is oracle_edge) else ""
 
+                # TODO: merge
+                if hasattr(edge.rule, "ruleid"):
+                    edge.ruleid = edge.rule.ruleid
+
                 ## caution: pruning might change caching, so make sure rule is defined in the output forest
-                if edge.rule.ruleid in rulecache:
-                    rule_print = str(edge.rule.ruleid)
+                if edge.ruleid in rulecache:
+                    rule_print = str(edge.ruleid)
                 else:
-                    rule_print = "%s %s" % (edge.rule.ruleid, repr(edge.rule)) #self.rules[edge.ruleid])
-                    rulecache.add(edge.rule.ruleid)
+                    rule_print = "%s %s" % (edge.ruleid, repr(edge.rule)) #self.rules[edge.ruleid])
+                    rulecache.add(edge.ruleid)
                 wordnum = sum([1 if type(x) is str else 0 for x in edge.lhsstr])
-                tailstr = " ".join([x if type(x) is str else x.iden for x in edge.lhsstr])
+                tailstr = " ".join(['"%s"' % x if type(x) is str else x.iden for x in edge.lhsstr])
                 print >> out, "\t%s%s ||| %s ||| %s text-length=%d" \
                             % (is_oracle, tailstr, rule_print, edge.fvector, wordnum)
                      

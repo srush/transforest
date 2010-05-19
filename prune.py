@@ -32,15 +32,17 @@ def inside_outside(forest):
     forest.root.alpha = 0
 
     for node in forest.reverse():   ## top-down
-        assert hasattr(node, "alpha"), node
-        node.merit = node.alpha + node.beta
-    
-        for edge in node.edges:
-            edge.merit = node.alpha + edge.beta
-            for sub in edge.subs:
-                score = edge.merit - sub.beta
-                if not hasattr(sub, "alpha") or score < sub.alpha:
-                    sub.alpha = score
+        if not hasattr(node, "alpha"):
+            node.unreachable = True
+        else:
+            node.merit = node.alpha + node.beta
+
+            for edge in node.edges:
+                edge.merit = node.alpha + edge.beta
+                for sub in edge.subs:
+                    score = edge.merit - sub.beta
+                    if not hasattr(sub, "alpha") or score < sub.alpha:
+                        sub.alpha = score
     
 def prune(forest, gap, delete=True, do_merits=True):
     ''' Known issue: not 100% correct w.r.t. floating point errors.'''
@@ -48,7 +50,7 @@ def prune(forest, gap, delete=True, do_merits=True):
     def check_subs(edge, threshold):
         ''' check if every tail falls in the beam. '''
         for sub in edge.subs:
-            if sub.merit > threshold:
+            if hasattr(sub, "unreachable") or sub.merit > threshold:
                 return False
         return True
 
@@ -66,7 +68,7 @@ def prune(forest, gap, delete=True, do_merits=True):
     kleinedges = 0
     for node in forest:
         iden = node.iden
-        if node.merit <= threshold:  ## node pruning
+        if not hasattr(node, "unreachable") and node.merit <= threshold:  ## node pruning
             newnodes[iden] = node
             neworder.append(node)
             node.edges = [e for e in node.edges if (e.merit <= threshold and check_subs(e, threshold))] 

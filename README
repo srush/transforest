@@ -15,7 +15,15 @@ TODOs:
 -14) pattern-match returns an in-placed forest  by HM
 -15) merge dump and dumptf into a single function dump    by HM
 
-Note: from 4refs.results.* to translations: | grep -A1 "^k=1" | grep -v "^k=1" | grep -v "^\-\-" 
+Notes: 
+
+from 4refs.results.* to translations: | grep -A1 "^k=1" | grep -v "^k=1" | grep -v "^\-\-" 
+from forest to target words: 
+
+    cat 4ref.tforests | grep "^\t" | perl -ple 's/\|\|\|.*$//g' | awk '{for (i=1;i<=NF;i++) print $i}'|grep ^\"| perl -ple 's/^\"//g;s/\"$//g;s/\\//g' | sort |uniq >4ref.targetwords
+
+use target words to prune LM:
+
 
 Modified by liang on 2010/05/05:
 
