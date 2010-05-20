@@ -38,7 +38,7 @@ class Rule(object):
     def tree_size(self):
         '''number of non-variable nodes in lhs tree'''
         # TODO: -LRB--
-        return self.lhs.count("(")
+        return self.lhs.count("(") - self.lhs.count("\"(")
     
 class RuleSet(defaultdict):
     ''' map from lhs to a list of Rule '''
