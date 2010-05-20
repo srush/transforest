@@ -18,7 +18,7 @@ class Rule(object):
 
     @staticmethod
     def parse(line):
-        '''S -> NP VP ### gt_prob=-5 text-lenght=0 plhs=-2'''
+        '''S(NP("...") VP) -> x1 "..." x0 ### gt_prob=-5 text-lenght=0 plhs=-2'''
         try:
             rule, fields = line.split(" ### ")
             lhs, rhs = rule.strip().split(" -> ")
@@ -35,7 +35,10 @@ class Rule(object):
         return "%s -> %s" % (self.lhs, \
                              " ".join(quoteattr(s[1:-1]) if s[0] == '"' else s \
                                       for s in self.rhs))
-
+    def tree_size(self):
+        '''number of non-variable nodes in lhs tree'''
+        # TODO: -LRB--
+        return self.lhs.count("(")
     
 class RuleSet(defaultdict):
     ''' map from lhs to a list of Rule '''

@@ -286,7 +286,7 @@ class Node(Tree):
 
     
 def substitute(varstr, subtrees):
-    ''' now returns a list!'''
+    ''' now returns a str!'''
 
     s = []
     varid = 0
