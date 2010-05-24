@@ -482,52 +482,35 @@ class Forest(object):
 
 if __name__ == "__main__":
 
-    try:
-        import psyco
-        psyco.full()
-    except:
-        pass
-    
-    import optparse
-    optparser = optparse.OptionParser(usage="usage: cat <forests> | %prog [options (-h for details)]")
-  
-    ## default value for k is different for the two modes: fixed-k-best or \inf-best
+    # TODO: translate all these to gflags
+#     optparser.add_option("", "--id", dest="sentid", type=int, help="sentence id", metavar="ID", default=0)
+#     optparser.add_option("", "--first", dest="first", type=str, \
+#                          help="only first F forests", metavar="F", default=None)
+#     optparser.add_option("", "--fear", dest="compute_fear", action="store_true", help="compute fears", default=False)
+#     optparser.add_option("", "--hope", dest="hope", type=float, help="hope weight", default=0)
+#     optparser.add_option("", "--recover", dest="recover_oracle", action="store_true", help="recover oracles", default=False)
 
-  #
-    optparser.add_option("-k", "", dest="k", type=int, help="k-best", metavar="K", default=None)
-    optparser.add_option("", "--thres", dest="threshold", type=float, \
-                         help="threshold/margin", metavar="THRESHOLD", default=None)
-    optparser.add_option("", "--inf", dest="infinite", action="store_true", help="\inf-best", default=False)
-    optparser.add_option("", "--dump", dest="dump", action="store_true", help="\inf-best", default=False)
-    optparser.add_option("", "--id", dest="sentid", type=int, help="sentence id", metavar="ID", default=0)
-    optparser.add_option("", "--first", dest="first", type=str, \
-                         help="only first F forests", metavar="F", default=None)
-    ## weights
-    optparser.add_option("", "--oracle", dest="compute_oracle", action="store_true", help="compute oracles", default=False)
-    optparser.add_option("", "--fear", dest="compute_fear", action="store_true", help="compute fears", default=False)
-    optparser.add_option("", "--hope", dest="hope", type=float, help="hope weight", default=0)
-    optparser.add_option("", "--recover", dest="recover_oracle", action="store_true", help="recover oracles", default=False)
-    
-    optparser.add_option("-r", "--ruleset", dest="ruleset", type=str, help="translation rule set", default=None)
-    optparser.add_option("-t", "--hgtype", dest="tranforest", action="store_true", help="type of forest p or t", default=False)
-##    optparser.add_option("", "--refs", dest="refs", type=str, help="references", default=None)
-    optparser.add_option("", "--rulefilter", dest="rulefilter", action="store_true", help="filter rule set", default=False)
-  
-    (opts, args) = optparser.parse_args()
+#    (opts, args) = optparser.parse_args()
 
-    # "ref*" or "ref1 ref2..."
-    reffiles = [open(f) for f in args]
+    flags.DEFINE_boolean("trans", False, "translation forest instead of parse forest", short_name="t")
+    flags.DEFINE_string("ruleset", None, "translation rule set (parse => trans)", short_name="r")
+    flags.DEFINE_boolean("oracle", False, "compute oracles")
+    flags.DEFINE_integer("kbest", 1, "kbest", short_name="k")
+    flags.DEFINE_boolean("dump", False, "dump forest (to stdout)")    
+    flags.DEFINE_boolean("infinite", False, "infinite-kbest")    
+    flags.DEFINE_float("threshold", None, "threshold/margin")
+    flags.DEFINE_integer("first", None, "first N forests only")
+    flags.DEFINE_boolean("rulefilter", False, "dump filtered ruleset")    
 
     argv = FLAGS(sys.argv)
 
+    # "ref*" or "ref1 ref2..."
+    reffiles = [open(f) for f in argv]
+
     weights = Model.cmdline_model().weights
   
-    hgtype=0 # type of parse forest
-    if opts.tranforest:
-        hgtype=1   
-    
-    if opts.ruleset is not None:
-        ruleset = RuleSet(opts.ruleset)
+    if FLAGS.ruleset is not None:
+        ruleset = RuleSet(FLAGS.ruleset)
         Forest.globalruleid = ruleset.rule_num()
 
     davidoraclebleus = Bleu()
@@ -542,17 +525,14 @@ if __name__ == "__main__":
     filtered_ruleset = {}
     allctime = 0
  
-    for i, forest in enumerate(Forest.load("-", hgtype)):
+    for i, forest in enumerate(Forest.load("-", FLAGS.trans)):
  
-#         if forest.tag == "1":
-#             forest.tag = "sent.%d" % (i+1)
+        if FLAGS.trans:  # translation forest
+            if not FLAGS.infinite:
+                if FLAGS.k is None:
+                    FLAGS.k = 1
 
-        if hgtype:  # translation forest
-            if not opts.infinite:
-                if opts.k is None:
-                    opts.k = 1
-
-                forest.lazykbest(opts.k, weights=weights, sentid=forest.tag, threshold=opts.threshold)
+                forest.lazykbest(FLAGS.k, weights=weights, sentid=forest.tag, threshold=FLAGS.threshold)
                 print >> logs, "%d\t%s" % (len(forest.root.klist), forest.tag)
                 
 ##                forest.root.print_derivation()
@@ -567,17 +547,17 @@ if __name__ == "__main__":
                         onebestscores += score
                         onebestbleus += (hyp, forest.refs)#forest.bleu.copy()
 
-                if opts.recover_oracle:
-                    oracle_bleu, oracle_hyp, oracle_fv = forest.recover_oracle()[:3]
-                    oracle_score = oracle_fv.dot(weights)
-                    oracle_hyp = (oracle_hyp)
-                    davidoraclebleus += forest.bleu.copy()
-                    davidscores += oracle_score
-                    print >> logs,  "oracle\tscore=%.4lf\tbleu+1=%.4lf\tlenratio=%.2lf\n%s" % \
-                                (oracle_score, oracle_bleu, forest.bleu.ratio(), oracle_hyp)            
+#                 if FLAGS.recover_oracle:
+#                     oracle_bleu, oracle_hyp, oracle_fv = forest.recover_oracle()[:3]
+#                     oracle_score = oracle_fv.dot(weights)
+#                     oracle_hyp = (oracle_hyp)
+#                     davidoraclebleus += forest.bleu.copy()
+#                     davidscores += oracle_score
+#                     print >> logs,  "oracle\tscore=%.4lf\tbleu+1=%.4lf\tlenratio=%.2lf\n%s" % \
+#                                 (oracle_score, oracle_bleu, forest.bleu.ratio(), oracle_hyp)            
 
-                if opts.compute_oracle:
-                    bleu, hyp, fv, edgelist = forest.compute_oracle(weights, opts.hope, 1)
+                if FLAGS.oracle:
+                    bleu, hyp, fv, edgelist = forest.compute_oracle(weights, FLAGS.hope, 1)
                     bleu = forest.bleu.rescore(hyp)
                     mscore = weights.dot(fv)
                     print  >> logs, "moracle\tscore=%.4lf\tbleu+1=%.4lf\tlenratio=%.2lf\n%s" % \
@@ -586,35 +566,35 @@ if __name__ == "__main__":
                     myoraclebleus += forest.bleu.copy()
                     myscores += mscore
 
-                if opts.compute_fear:
-                    bleu, hyp, fv, edgelist = forest.compute_oracle(weights, 1, -1)
-                    bleu = forest.bleu.rescore(hyp)
-                    mscore = weights.dot(fv)
-                    print  >> logs, "   fear\tscore=%.4lf\tbleu+1=%.4lf\tlenratio=%.2lf\n%s" % \
-                                (mscore, forest.bleu.fscore(), forest.bleu.ratio(), hyp)
+#                 if FLAGS.compute_fear:
+#                     bleu, hyp, fv, edgelist = forest.compute_oracle(weights, 1, -1)
+#                     bleu = forest.bleu.rescore(hyp)
+#                     mscore = weights.dot(fv)
+#                     print  >> logs, "   fear\tscore=%.4lf\tbleu+1=%.4lf\tlenratio=%.2lf\n%s" % \
+#                                 (mscore, forest.bleu.fscore(), forest.bleu.ratio(), hyp)
                 
-                    myfearbleus += forest.bleu.copy()
-                    myfearscores += mscore
+#                     myfearbleus += forest.bleu.copy()
+#                     myfearscores += mscore
 
             else:
-                if opts.k is None:
-                    opts.k = 100000 ## inf
-                for res in forest.iterkbest(opts.k, threshold=opts.threshold):
+                if FLAGS.k is None:
+                    FLAGS.k = 100000 ## inf
+                for res in forest.iterkbest(FLAGS.k, threshold=FLAGS.threshold):
                     print >> logs,  "%.4lf\n%s" % (forest.adjust_output(res)[:2])
 
             if i % 10 == 9:
                 print >> logs,  "overall 1-best deriv bleu = %.4lf (%.2lf) score = %.4lf" \
                             % (onebestbleus.score_ratio() + (onebestscores/(i+1),))
-                if opts.recover_oracle:
-                    print >> logs,  "overall david oracle bleu = %.4lf (%.2lf) score = %.4lf" \
-                                % (davidoraclebleus.score_ratio() + (davidscores/(i+1),))
-                if opts.compute_oracle:
+#                 if FLAGS.recover_oracle:
+#                     print >> logs,  "overall david oracle bleu = %.4lf (%.2lf) score = %.4lf" \
+#                                 % (davidoraclebleus.score_ratio() + (davidscores/(i+1),))
+                if FLAGS.oracle:
                     print >> logs,  "overall my    oracle bleu = %.4lf (%.2lf) score = %.4lf" \
                             % (myoraclebleus.score_ratio() + (myscores/(i+1),))
 
-                if opts.compute_oracle:
-                    print >> logs,  "overall my      fear bleu = %.4lf (%.2lf) score = %.4lf" \
-                          % (myfearbleus.score_ratio() + (myfearscores/(i+1),))
+#                 if FLAGS.compute_oracle:
+#                     print >> logs,  "overall my      fear bleu = %.4lf (%.2lf) score = %.4lf" \
+#                           % (myfearbleus.score_ratio() + (myfearscores/(i+1),))
         else:
             # convert pforest to tforest by pattern matching 
             stime = time.time()
@@ -623,7 +603,7 @@ if __name__ == "__main__":
             # inside replace
             pm = PatternMatching(forest, ruleset, \
                                  filtered_ruleset, deffields,
-                                 opts.rulefilter)
+                                 FLAGS.rulefilter)
             forest = pm.convert()
             forest.compute_size()
             forest.refs = [f.readline().strip() for f in reffiles]
@@ -634,15 +614,15 @@ if __name__ == "__main__":
                   (forest.tag, len(forest), forest.size()[0], forest.size()[1], etime - stime)
             allctime += (etime - stime)
             
-        if opts.first is not None:
-            if i+1 >= int(opts.first):
+        if FLAGS.first is not None:
+            if i+1 >= int(FLAGS.first):
                 break
         
     print >> logs, "Total converting time: %.2lf" % allctime
     #print >> logs, "Avg   converting time: %.2lf" % float(allctime)/float(i)
     
     # dump filtered rule set
-    if opts.rulefilter:
+    if FLAGS.rulefilter:
         for (lhs, rules) in filtered_ruleset.iteritems():
             for rule in rules:
                 print >> logs, "%s" % rule

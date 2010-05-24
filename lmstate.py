@@ -30,7 +30,7 @@ class DottedRule(object):
     
 class LMState(object):
 
-    ''' stack is a list of dotted rules(hyperedges) '''
+    ''' stack is a list of dotted rules(hyperedges, dot_position) '''
     
     __slots__ = "stack", "trans", "score", "step"
 
@@ -81,7 +81,7 @@ class LMState(object):
     next_symbol = lambda self: self.stack[-1].next_symbol
     end_of_rule = lambda self: self.stack[-1].end_of_rule
 
-    def complete(self):        
+    def complete(self):
         if self.end_of_rule():
             yield LMState(self.stack[:-2] + [self.stack[-2].advance()], 
                           self.trans,
