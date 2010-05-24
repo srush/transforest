@@ -17,6 +17,7 @@ The reason for breaking the BLEU computation into three phases cook_refs(), cook
 '''
 
 import optparse
+import copy
 import sys, math, re, xml.sax.saxutils
 from collections import defaultdict
 
@@ -174,8 +175,8 @@ class Bleu(object):
     def copy(self):
         ''' copy the refs.'''
         new = Bleu(n=self.n)
-        new.ctest = self.ctest
-        new.crefs = self.crefs
+        new.ctest = copy.copy(self.ctest)
+        new.crefs = copy.copy(self.crefs)
         new._score = None
         return new
 

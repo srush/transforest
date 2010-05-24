@@ -40,6 +40,11 @@ from bleu import Bleu
 from utility import desymbol
 from rule import Rule, RuleSet
 
+from model import Model
+
+import gflags as flags
+FLAGS=flags.FLAGS
+
 print_merit = False
 cache_same = False
 
@@ -475,26 +480,6 @@ class Forest(object):
                 
         return bleu, hyp, fv, edgelist
 
-def get_weights(w):
-    '''input: either filename or weightstr.'''
-
-    #TODO: modify svector (exception handling, robustness)
-
-    if w.strip() == "":
-        weights = Vector()
-    else:
-        if not (w.find(":") >= 0 or w.find("=") >= 0):
-            w = open(w).readline().strip()
-
-        # now outside
-#        w = w.replace(":", "=").replace(",", " ") 
-        weights = Vector(w)
-
-    print >> logs, 'using weights: "%s...%s" (%d fields)' \
-                % (w[:10], w[-10:], len(weights))
-
-    return weights
-
 if __name__ == "__main__":
 
     try:
@@ -518,7 +503,6 @@ if __name__ == "__main__":
     optparser.add_option("", "--first", dest="first", type=str, \
                          help="only first F forests", metavar="F", default=None)
     ## weights
-    optparser.add_option("-w", "--weights", dest="weights", type=str, help="weights file or str", metavar="WEIGHTS", default="lm1=2 gt_prob=1")
     optparser.add_option("", "--oracle", dest="compute_oracle", action="store_true", help="compute oracles", default=False)
     optparser.add_option("", "--fear", dest="compute_fear", action="store_true", help="compute fears", default=False)
     optparser.add_option("", "--hope", dest="hope", type=float, help="hope weight", default=0)
@@ -533,8 +517,10 @@ if __name__ == "__main__":
 
     # "ref*" or "ref1 ref2..."
     reffiles = [open(f) for f in args]
-    
-    weights = get_weights(opts.weights) 
+
+    argv = FLAGS(sys.argv)
+
+    weights = Model.cmdline_model().weights
   
     hgtype=0 # type of parse forest
     if opts.tranforest:
@@ -579,7 +565,7 @@ if __name__ == "__main__":
                     print hyp # to stdout
                     if k == 0:
                         onebestscores += score
-                        onebestbleus += forest.bleu.copy()
+                        onebestbleus += (hyp, forest.refs)#forest.bleu.copy()
 
                 if opts.recover_oracle:
                     oracle_bleu, oracle_hyp, oracle_fv = forest.recover_oracle()[:3]
@@ -648,12 +634,6 @@ if __name__ == "__main__":
                   (forest.tag, len(forest), forest.size()[0], forest.size()[1], etime - stime)
             allctime += (etime - stime)
             
-#         if opts.compute_oracle:
-#             print >> logs,  "overall 1-best deriv bleu = %.4lf (%.2lf) score = %.4lf" \
-#                   % (onebestbleus.score_ratio() + (onebestscores/(i+1),))
-#             print >> logs,  "overall my    oracle bleu = %.4lf (%.2lf) score = %.4lf" \
-#                   % (myoraclebleus.score_ratio() + (myscores/(i+1),))
-
         if opts.first is not None:
             if i+1 >= int(opts.first):
                 break
