@@ -83,13 +83,13 @@ class Forest(object):
         self.nodes = newnodes
         self.nodeorder = newnodeorder
         
-    def __init__(self, num, sentence, cased_sent, hgtype, tag=""):
+    def __init__(self, num, sentence, cased_sent, transforest, tag=""):
         self.tag = tag
         self.num = num
         self.nodes = {}  ## id: node
         self.nodeorder = [] #node
 
-        self.type = hgtype
+        self.transforest = transforest
         
         self.sent = sentence
         # a backup of cased, word-based sentence, since sent itself is going to be lowercased and char-based.
@@ -182,7 +182,7 @@ class Forest(object):
               (self.tag, k, time.time() - basetime)
 
     @staticmethod
-    def load(filename, hgtype=0, lower=True, sentid=0):
+    def load(filename, transforest=False, lower=True, sentid=0):
         '''now returns a generator! use load().next() for singleton.
            and read the last line as the gold tree -- TODO: optional!
            and there is an empty line at the end
@@ -234,7 +234,7 @@ class Forest(object):
             ## sizes: number of nodes, number of edges (optional)
             num, nedges = map(int, file.readline().split("\t"))   
 
-            forest = Forest(num, sent, cased_sent, tag, hgtype)
+            forest = Forest(num, sent, cased_sent, tag, transforest)
 
             forest.tag = tag
 
@@ -375,9 +375,9 @@ class Forest(object):
               % (num_sents, total_time, total_time/(num_sents+0.001))
 
     @staticmethod
-    def loadall(filename, hgtype=0):
+    def loadall(filename, transforest=False):
         forests = []
-        for forest in Forest.load(filename, hgtype):
+        for forest in Forest.load(filename, transforest):
             forests.append(forest)
         return forests
 
@@ -507,7 +507,7 @@ if __name__ == "__main__":
     # "ref*" or "ref1 ref2..."
     reffiles = [open(f) for f in argv]
 
-    weights = Model.cmdline_model().weights
+    weights = Model.cmdline_model()
   
     if FLAGS.ruleset is not None:
         ruleset = RuleSet(FLAGS.ruleset)
@@ -525,9 +525,9 @@ if __name__ == "__main__":
     filtered_ruleset = {}
     allctime = 0
  
-    for i, forest in enumerate(Forest.load("-", FLAGS.trans)):
+    for i, forest in enumerate(Forest.load("-", transforest=FLAGS.trans)):
  
-        if FLAGS.trans:  # translation forest
+        if forest.transforest:  # translation forest
             if not FLAGS.infinite:
                 if FLAGS.k is None:
                     FLAGS.k = 1
@@ -617,9 +617,9 @@ if __name__ == "__main__":
         if FLAGS.first is not None:
             if i+1 >= int(FLAGS.first):
                 break
-        
-    print >> logs, "Total converting time: %.2lf" % allctime
-    #print >> logs, "Avg   converting time: %.2lf" % float(allctime)/float(i)
+
+    if FLAGS.ruleset:
+        print >> logs, "Total converting time: %.2lf" % allctime
     
     # dump filtered rule set
     if FLAGS.rulefilter:

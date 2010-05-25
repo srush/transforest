@@ -11,24 +11,22 @@ flags.DEFINE_string("weights", None, "weights str or filename", short_name="w")
 
 from svector import Vector
 
-class Model(object):
+class Model(Vector):
 
-    __slots__ = "weights", "lm_weight"
+    __slots__ = "lm_weight"
     
     def __init__(self, w):
         '''input is either a filename or weightstr.'''
-
-        if w.strip() == "":
-            self.weights = Vector()
-        else:
-            if not (w.find(":") >= 0 or w.find("=") >= 0):
-                w = open(w).readline().strip() # single line
-            self.weights = Vector(w)
-
+       
+        if w.strip() != "" and not (w.find(":") >= 0 or w.find("=") >= 0):
+            w = open(w).readline().strip() # single line
+            
+        Vector.__init__(self, w)
+        
         print >> logs, 'using weights: "%s...%s" (%d fields)' \
-                    % (w[:10], w[-10:], len(self.weights))
+                    % (w[:10], w[-10:], len(self))
 
-        self.lm_weight = self.weights["lm"]
+        self.lm_weight = self["lm"]
 
     @staticmethod
     def cmdline_model():

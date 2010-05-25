@@ -32,7 +32,7 @@ class LMState(object):
 
     ''' stack is a list of dotted rules(hyperedges, dot_position) '''
     
-    __slots__ = "stack", "trans", "score", "step"
+    __slots__ = "stack", "_trans", "score", "step"
 
     order = 3  # n-gram order
     lm = None
@@ -44,12 +44,12 @@ class LMState(object):
         LMState.lm = lm
         LMState.vocab = vocab
         LMState.weights = weights
-        LMState.lm_weight = weights["lm"]
+        LMState.lm_weight = weights.lm_weight
         LMState.order = order
 
     def __init__(self, stack, trans, score=0, step=0):
         self.stack = stack
-        self.trans = trans
+        self._trans = trans
         self.score = score
         self.step = step
         self.scan()
@@ -59,13 +59,13 @@ class LMState(object):
         if type(next_symbol) is Node:
             for edge in next_symbol.edges:
                 yield LMState(self.stack + [DottedRule(edge)], 
-                              self.trans, 
+                              self._trans, 
                               self.score + edge.fvector.dot(LMState.weights),
                               self.step + self.stack[-1].tree_size())
 
     def lmstr(self):
         # TODO: cache real lmstr
-        return self.trans[-LMState.order+1:]
+        return self._trans[-LMState.order+1:]
 
     def scan(self):
         while True:
@@ -74,7 +74,7 @@ class LMState(object):
                 this = LMState.vocab.index(symbol)
                 self.stack[-1].advance() # dot ++
                 self.score += LMState.lm.wordprob(this, self.lmstr()) * lm_weight
-                self.trans += [this]
+                self._trans += [this]
             else:
                 break
 
@@ -84,7 +84,7 @@ class LMState(object):
     def complete(self):
         if self.end_of_rule():
             yield LMState(self.stack[:-2] + [self.stack[-2].advance()], 
-                          self.trans,
+                          self._trans,
                           self.score, 
                           self.step + self.stack[-1].tree_size())
 
@@ -92,3 +92,12 @@ class LMState(object):
         ## calls DottedRule.__eq__()
         return self.stack == other.stack and \
                self.lmstr() == other.lmstr()
+
+    def is_final(self):
+        ''' a complete translation'''
+        # TOP' -> <s> TOP </s> . (dot at the end)
+        return len(self.stack) == 1 and self.stack[0].end_of_rule()
+
+    def trans(self):
+        '''recover translation from lmstr'''
+        return 
