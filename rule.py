@@ -23,7 +23,7 @@ class Rule(object):
             rule, fields = line.split(" ### ")
             lhs, rhs = rule.strip().split(" -> ")
             rhs = rhs.split()
-            return Rule(lhs, rhs, fields)
+            return Rule(lhs, rhs, fields.strip())
         except:
             print >> logs, "BAD RULE: %s" % line.strip()
             return None
@@ -70,31 +70,44 @@ class RuleSet(defaultdict):
         return self.ruleid
 
 if __name__ == "__main__":
-    import optparse
-    optparser = optparse.OptionParser(usage="usage: rule.py 1>filtered.rules 2>bad.rules")
-    
+    #import optparse
+    #optparser = optparse.OptionParser(usage="usage: rule.py 1>filtered.rules 2>bad.rules")
+    flags.DEFINE_integer("max_ce_ratio", 4, "maximum ce tatio of garbage rules")
+
     print >> logs, "start to filting rule set ..."
-    otime = time.time()
-    bad1 = 0  # ratio > 3
-    bad2 = 0  # best 100
-    bad = 0   # rhs == null
-    filteredrs = defaultdict(list)
+    stime = time.time()
+    
+    bad_ratio = 0    #bad ratio
+    bad_noalign = 0   # NO algnments
+    bad_null = 0     # rhs == NULL
+
+    # filtered rule set
+    # filteredrs = defaultdict(list)
     for i, line in enumerate(sys.stdin, 1):
         rule = Rule.parse(line)
         if rule is not None:
             ratioce = float(len(rule.lhs.split()))/float(len(rule.rhs))
-            ratioec = float(len(rule.rhs))/float(len(rule.lhs.split()))
-            if ratioec > 6 or ratioce > 4:
-                bad1 += 1
-                print >> logs, "Bad Ratio: %s" % line
+            #ratioec = float(len(rule.rhs))/float(len(rule.lhs.split()))
+            if ratioce > 4:
+                bad_ratio += 1
+                print >> logs, "Bad Ratio: %s" % line.strip()
+            else if ":" not in rule.fields:
+                bad_noalign += 1
+                print >> logs, "No alginment: %s" % line.strip()
             else:
-                filteredrs[rule.lhs].append(rule)
+                # filteredrs[rule.lhs].append(rule)
+                print line.strip()
         else:
-            bad += 1
+            bad_null += 1
 
-    for (lhs, rules) in filteredrs.iteritems():
-        bad2 += ((len(rules) - 100) if len(rules)>100 else 0)
-        rules = rules[:100]
-        for rule in rules:
-            print "%s" % str(rule)
-    print >> logs, "\ntotal %d rules (%d rhs=null; %d ratio>3; %d rhs>100)filtered in %.2lf secs" % (i, bad, bad1, bad2, time.time() - otime)
+#    for (lhs, rules) in filteredrs.iteritems():
+#        for rule in rules:
+#            print "%s" % str(rule)
+
+    etime = time.time()
+
+    print >> logs, "\ntotal number of rules: %d" % i
+    print >> logs, "\t %d rhs=null; %d bad ratio; %d no alignment" % (bad_null, bad_ratio, bad_noalign)
+    print >> logs, "\t %.2lf rhs=null; %.2lf bad ratio; %.2lf no alignment" %\
+          (float(bad_null)/float(i), float(bad_ratio)/float(i), float(bad_noalign)/float(i))
+    print >> logs, "total number of unique lhs rules left: " % len(filteredrs)
