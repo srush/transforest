@@ -1,103 +1,134 @@
+#!/usr/bin/env python
+
+import sys
+logs = sys.stderr
+
+import srilm
+
+import gflags as flags
+FLAGS=flags.FLAGS
+
+flags.DEFINE_string("lm", None, "SRILM language model file")
+flags.DEFINE_integer("order", 3, "language model order")
+
 class Ngram(object):
-	'''a class of variables and methods (served as globals for other modules).'''
-	
-	def __init__(self, order, lmfilename):
-		self.order = order
-		self.vocab = srilm.Vocab(unk=True)
-		self.ngram = srilm.Ngram(self.vocab, order)
+    '''a class of variables and methods (served as globals for other modules).'''
 
-		import time
-		t0 = time.clock()
-		print >> logs, "reading lm from", lmfilename
-		self.ngram.read(lmfilename, limit_vocab=False)
-		print >> logs, "lm loaded in %.2lf seconds" % (time.clock() - t0)
-		self.pqcache = {}
+    @staticmethod
+    def cmdline_ngram():
+        if FLAGS.lm is None:
+            print >> logs, "Error: must specify an LM file --lm" + str(FLAGS)
+            sys.exit(1)            
 
-		self._stopsyms = (self.vocab.index("</s>"), )
-		self._startsyms = (self.vocab.index("<s>"), ) * (self.order - 1)
-		
-	def word_prob(self, s):
-		## traditional interface (for debugging), although i can use pq()
+        return Ngram(order=FLAGS.order, lmfilename=FLAGS.lm)
+    
+    def __init__(self, order, lmfilename):
+        self.order = order
+        self.vocab = srilm.Vocab(True)
+        self.ngram = srilm.Ngram(self.vocab, order)
 
-		news = "<s> " * (self.order - 1) + s + " </s>"
-		t = self.words2indices(news)
-		score = 0
-		for i in range(self.order - 1, len(t)):
-			score += self.ngram.wordprob(t[i], t[i - self.order + 1: i])
-		return -score   # negative logprob
-		
-	def clear(self):
-		self.pqcache = {}
-		
-	def _pq(self, qs):
-		'''real work for pq'''
-		l = len(qs)
+        import time
+        t0 = time.clock()
+        print >> logs, "reading lm from", lmfilename
+        self.ngram.read(lmfilename, limit_vocab=False)
+        print >> logs, "lm loaded in %.2lf seconds" % (time.clock() - t0)
+        self.pqcache = {}
 
-		if l >= self.order:
-			q = qs[:self.order - 1] + (-1,) + qs[l - self.order + 1:]
-		else:
-			q = qs[:] ### caution!!! slicing to copy!
+        self._stopsyms = [self.vocab.index("</s>")]
+        self._startsyms = [self.vocab.index("<s>")] * (self.order - 1)
+        
+    def word_prob(self, s):
+        ## traditional interface (for debugging), although i can use pq()
 
-		if settings.debugLM:
-			print >> logs, "evaluating %s" % self.ppqstr(qs)
-		p = 0
-		i = self.order - 1
-		while i < l:
-			if qs[i] == -1:  # meet a *, skip m grams
-				i += self.order 
-			else:
-				lm_prob = -self.ngram.wordprob(qs[i], qs[i - self.order + 1: i])  # make it positive
-				p += lm_prob
-				i += 1
-				
-		if settings.debugLM:
-			print >> logs, "p = %.3lf, q = %s" % (p, self.ppqstr(q))
+        news = "<s> " * (self.order - 1) + s + " </s>"
+        t = self.words2indices(news)
+        score = 0
+        for i in range(self.order - 1, len(t)):
+            score += self.ngram.wordprob(t[i], t[i - self.order + 1: i])
+        return -score   # negative logprob
+        
+    def clear(self):
+        self.pqcache = {}
+        
+    def _pq(self, qs):
+        '''real work for pq'''
+        l = len(qs)
 
-		return p, qstr.QStr(q)
+        if l >= self.order:
+            q = qs[:self.order - 1] + (-1,) + qs[l - self.order + 1:]
+        else:
+            q = qs[:] ### caution!!! slicing to copy!
 
-	def pq(self, qs):
-		'''s can be any valid *-string
-		return (p, q)
-		'''
+#       if settings.debugLM:
+#           print >> logs, "evaluating %s" % self.ppqstr(qs)
+        p = 0
+        i = self.order - 1
+        while i < l:
+            if qs[i] == -1:  # meet a *, skip m grams
+                i += self.order 
+            else:
+                lm_prob = -self.ngram.wordprob(qs[i], qs[i - self.order + 1: i])  # make it positive
+                p += lm_prob
+                i += 1
+                
+        if settings.debugLM:
+            print >> logs, "p = %.3lf, q = %s" % (p, self.ppqstr(q))
 
-		res = self.pqcache.get(qs, None)
-		if res is not None:
-			return res
+        return p, qstr.QStr(q)
 
-		p, q = self._pq(qs)
-		self.pqcache[qs] = (p, q)
-		return p, q
+    def pq(self, qs):
+        '''s can be any valid *-string
+        return (p, q)
+        '''
 
-	def rawpq(self, ws):
-		return self.pq(self.words2indices(ws))
+        res = self.pqcache.get(qs, None)
+        if res is not None:
+            return res
 
-	
-	def words2indices(self, ws):
-		'''mapping a list of words (strings) to lm indices
-		return a tuple (instead of a list)
-		'''
-		if type(ws) == str:
-			ws = ws.split()
-		return tuple([self.vocab.index(w) for w in ws])
+        p, q = self._pq(qs)
+        self.pqcache[qs] = (p, q)
+        return p, q
 
-	def index2word(self, qitem):
-		if qitem == -1:
-			return "*"
-		return self.vocab.word(qitem)
+    def rawpq(self, ws):
+        return self.pq(self.words2indices(ws))
+    
+    def word2index(self, w):
+        return self.vocab.index(w)
 
-	def ppqstr(self, qs):
-		return " ".join([self.index2word(qitem) for qitem in qs])
+    def words2indices(self, ws):
+        '''mapping a list of words (strings) to lm indices
+        return a tuple (instead of a list)
+        '''
+        if type(ws) == str:
+            ws = ws.split()
+        return tuple([self.word2index(w) for w in ws])
 
-	def pre(self, qs):
-		p = 0
-		for i in range(min(len(qs), self.order - 1)):
-			p += -self.ngram.wordprob(qs[i], qs[:i])  # make it positive
-		return p
+    def index2word(self, qitem):
+        if qitem == -1:
+            return "*"
+        return self.vocab.word(qitem)
 
-	def startsyms(self):
-		''' <s>^{order - 1} '''
-		return self._startsyms
+    def ppqstr(self, qs):
+        return " ".join([self.index2word(qitem) for qitem in qs])
 
-	def stopsyms(self):
-		''' </s> '''
-		return self._stopsyms
+    def pre(self, qs):
+        p = 0
+        for i in range(min(len(qs), self.order - 1)):
+            p += -self.ngram.wordprob(qs[i], qs[:i])  # make it positive
+        return p
+
+    def startsyms(self):
+        ''' <s>^{order - 1} '''
+        return self._startsyms
+
+    def stopsyms(self):
+        ''' </s> '''
+        return self._stopsyms
+
+    def raw_startsyms(self):
+        ''' <s>^{order - 1} '''
+        return ["<s>"] * (self.order - 1)
+
+    def raw_stopsyms(self):
+        ''' </s> '''
+        return ["</s>"]

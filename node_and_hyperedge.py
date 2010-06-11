@@ -90,10 +90,11 @@ class Node(Tree):
     def mapped_span(self, mapping):
         return (mapping[self.span[0]], mapping[self.span[1]]) 
     
-    def labelspan(self, separator=":", include_id=True):
+    def labelspan(self, separator=":", include_id=True, space=" "):
         ss = "%s%s " % (self.iden, separator) if include_id else ""
-        lbspn = "%s [%d-%d]" % (self.label + ("*" if self.is_spurious() else ""), \
-                                self.span[0], self.span[1])
+        lbspn = "%s%s[%d-%d]" % (self.label + ("*" if self.is_spurious() else ""),
+                                 space,
+                                 self.span[0], self.span[1])
         return ss + lbspn
 
     __str__ = labelspan
@@ -317,7 +318,16 @@ class Hyperedge(object):
     def shorter(self):
         ''' shorter form str: NP [3-5] -> DT [3-4]   NN [4-5]'''
         return "%s  ->  %s " % (self.head.labelspan(include_id=False), \
-                                "  ".join([x.labelspan(include_id=False) for x in self.subs]))            
+                                "  ".join([x.labelspan(include_id=False) \
+                                           for x in self.subs]))
+
+    def dotted_str(self, dot):
+        ''' NP [3-5] -> DT [3-4] . NN [4-5]'''
+        rhs = [(x.labelspan(include_id=False, space="") \
+                if type(x) is Node else x) for x in self.lhsstr]
+        rhs.insert(dot, ".")
+
+        return "%s -> %s" % (self.head, " ".join(rhs))
 
     def shortest(self):
         ''' shortest form str: NP -> DT NN '''

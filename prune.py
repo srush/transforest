@@ -22,8 +22,13 @@ import sys, time
 
 logs = sys.stderr
 
-from forest import Forest, get_weights
+from forest import Forest
 from bleu import Bleu
+
+import gflags as flags
+FLAGS=flags.FLAGS
+
+from model import Model
 
 def inside_outside(forest):
 
@@ -102,30 +107,23 @@ def prune(forest, gap, delete=True, do_merits=True):
 
 if __name__ == "__main__":
 
-    import optparse
-    optparser = optparse.OptionParser(usage="usage: cat <forest> | %prog -p <GAP> [options (-h for details)]")
-    optparser.add_option("-p", "--prob", dest="gap", type=float, help="merit threshold", metavar="PROB_GAP")
-    optparser.add_option("-s", "--suffix", dest="suffix", help="dump suffix (1.suffix)", metavar="SUF")
-    optparser.add_option("-S", "--start", dest="startid", help="dump start id", \
-                         metavar="ID", type=int, default=1)
-    optparser.add_option("-q", "--quiet", dest="quiet", action="store_true", help="no dumping", default=False)
-    optparser.add_option("-O", "--oracle", dest="oracle", action="store_true", help="oracle", default=False)
-    ## weights
-    optparser.add_option("-w", "--weights", dest="weights", type=str, help="weights file or str", metavar="WEIGHTS", default="lm1=2 gt_prob=1")
+#     optparser.add_option("-s", "--suffix", dest="suffix", help="dump suffix (1.suffix)", metavar="SUF")
+#     optparser.add_option("-S", "--start", dest="startid", help="dump start id", \
+#                          metavar="ID", type=int, default=1)
 
-    (opts, args) = optparser.parse_args()
+    flags.DEFINE_float("prob", None, "score threshold", short_name="p")
+    flags.DEFINE_boolean("oracle", False, "compute oracle after pruning")
+    flags.DEFINE_boolean("out", True, "output pruned forest (to stdout)")
+    flags.DEFINE_string("suffix", None, "suffix for dumping (1.<suffix>)", short_name="s")
+    flags.DEFINE_integer("startid", 1, "start id for dumping")
 
-    weights = get_weights(opts.weights)
+    argv = FLAGS(sys.argv)
 
-    if opts.gap is None:
-        optparser.error("must specify GAP.")
+    if FLAGS.prob is None:
+        print >> logs, "Error: must specify pruning threshold by -p" + str(FLAGS)
+        sys.exit(1)
 
-##    if opts.oracle:
-        
-##         from oracle import forest_oracle
-##         from parseval import Parseval
-        
-##        realpp = Parseval()
+    weights = Model.cmdline_model()
 
     myoraclebleus = Bleu()
     myscores = 0
@@ -137,10 +135,10 @@ if __name__ == "__main__":
             print
             continue
         
-        if opts.gap > 0: # TODO: 1-best in case gap = 0
-            prune(forest, opts.gap)
+        if FLAGS.prob > 0: # TODO: 1-best in case gap = 0
+            prune(forest, FLAGS.prob)
 
-        if opts.oracle: #new
+        if FLAGS.oracle: #new
             bleu, hyp, fv, edgelist = forest.compute_oracle(weights, 0, 1, store_oracle=True)
             ##print >> logs, forest.root.oracle_edge
             bleu = forest.bleu.rescore(hyp)
@@ -151,16 +149,9 @@ if __name__ == "__main__":
             myoraclebleus += forest.bleu.copy()
             myscores += mscore
 
-##             sc, parseval, tr, edgelist = forest_oracle(forest, forest.goldtree)
-##             realpp += Parseval(tr, forest.goldtree)
-##             for edge in edgelist:
-##                 edge.head.oracle_edge = edge
-##                 edge.is_oracle = True
-
-        #forest.tag = "sent.%d" % (i+opts.startid)
-        if not opts.quiet:
-            if opts.suffix is not None:
-                forest.dump(open("%d.%s" % (i+opts.startid, opts.suffix), "wt"))
+        if FLAGS.out:
+            if FLAGS.suffix is not None:
+                forest.dump(open("%d.%s" % (i+FLAGS.startid, FLAGS.suffix), "wt"))
             else:
                 forest.dump()
 
@@ -169,7 +160,7 @@ if __name__ == "__main__":
                             (i+1, total_nodes / (i+1.), total_edges / (i+1.), \
                              total_nodes * 100. / old_nodes, total_edges * 100. / old_edges)
                 
-    if opts.oracle:
+    if FLAGS.oracle:
         print >> logs,  "overall my    oracle bleu = %.4lf (%.2lf) score = %.4lf" \
               % (myoraclebleus.score_ratio() + (myscores/(i+1),))
 

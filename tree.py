@@ -312,7 +312,9 @@ class Tree(object):
 
         assert not is_empty, "The whole tree is empty! " + line
 
-        tree.label = "TOP"
+        if tree.label != "TOP":
+            # create another node
+            tree = Tree(label="TOP", span=tree.span, subs=[tree])
 
         if annotate:
             # recursive annotations (heads and stuff)

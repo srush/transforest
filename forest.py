@@ -312,21 +312,9 @@ class Forest(object):
                     edge.ruleid = int(x[0])
                     if len(x) > 1:
                         edge.rule = Rule.parse(" ".join(x[1:]) + " ### " + fields)
+                        forest.rules[edge.ruleid] = edge.rule #" ".join(x[1:]) #, None)
                     else:
-                        edge.rule = None # cahced rule; don't care here
-
-                    if len(x) > 1:
-                        forest.rules[edge.ruleid] = " ".join(x[1:]) #, None)
-                        
-##                    if cache_same:
-
-##                        short_edge = edge.shorter()
-##                        if short_edge in forest.short_edges:
-##                            edge.same = forest.short_edges[short_edge]
-##                            if use_same:
-##                                edge.fvector += edge.same.fvector
-##                        else:
-##                            forest.short_edges[short_edge] = edge
+                        edge.rule = forest.rules[edge.ruleid] # cahced rule
 
                     node.add_edge(edge)
                     if is_oracle:
@@ -501,6 +489,7 @@ if __name__ == "__main__":
     flags.DEFINE_float("threshold", None, "threshold/margin")
     flags.DEFINE_integer("first", None, "first N forests only")
     flags.DEFINE_boolean("rulefilter", False, "dump filtered ruleset")    
+    flags.DEFINE_float("hope", 0, "hope weight")
 
     argv = FLAGS(sys.argv)
 
@@ -541,7 +530,8 @@ if __name__ == "__main__":
                     score, hyp, fv = res
                     hyp = (hyp)
                     hyp_bleu = forest.bleu.rescore(hyp)
-                    print >> logs, "k=%d\tscore=%.4lf\tbleu+1=%.4lf\tlenratio=%.2lf" % (k+1, score, hyp_bleu, forest.bleu.ratio())
+                    print >> logs, "k=%d\tscore=%.4lf\tbleu+1=%.4lf\tlenratio=%.2lf\t%s" % \
+                          (k+1, score, hyp_bleu, forest.bleu.ratio(), fv)
                     print hyp # to stdout
                     if k == 0:
                         onebestscores += score
@@ -560,8 +550,9 @@ if __name__ == "__main__":
                     bleu, hyp, fv, edgelist = forest.compute_oracle(weights, FLAGS.hope, 1)
                     bleu = forest.bleu.rescore(hyp)
                     mscore = weights.dot(fv)
-                    print  >> logs, "moracle\tscore=%.4lf\tbleu+1=%.4lf\tlenratio=%.2lf\n%s" % \
-                                (mscore, forest.bleu.fscore(), forest.bleu.ratio(), hyp)
+                    print >> logs, "moracle\tscore=%.4lf\tbleu+1=%.4lf\tlenratio=%.2lf\t%s" % \
+                          (mscore, forest.bleu.fscore(), forest.bleu.ratio(), fv)
+                    print >> logs, hyp
                 
                     myoraclebleus += forest.bleu.copy()
                     myscores += mscore
