@@ -91,7 +91,7 @@ if __name__ == "__main__":
             if ratioce > 4:
                 bad_ratio += 1
                 print >> logs, "Bad Ratio: %s" % line.strip()
-            else if ":" not in rule.fields:
+            elif ":" not in rule.fields:
                 bad_noalign += 1
                 print >> logs, "No alginment: %s" % line.strip()
             else:

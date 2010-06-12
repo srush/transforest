@@ -523,6 +523,8 @@ if __name__ == "__main__":
 
                 forest.lazykbest(FLAGS.k, weights=weights, sentid=forest.tag, threshold=FLAGS.threshold)
                 print >> logs, "%d\t%s" % (len(forest.root.klist), forest.tag)
+                print >> logs, '<sent No="%d">' % int(i+1)
+                print >> logs, "<Chinese>%s</Chinese>" % " ".join(forest.cased_sent)
                 
 ##                forest.root.print_derivation()
 
@@ -530,10 +532,18 @@ if __name__ == "__main__":
                     score, hyp, fv = res
                     hyp = (hyp)
                     hyp_bleu = forest.bleu.rescore(hyp)
+                    
                     print >> logs, "k=%d\tscore=%.4lf\tbleu+1=%.4lf\tlenratio=%.2lf\t%s" % \
                           (k+1, score, hyp_bleu, forest.bleu.ratio(), fv)
-                    print hyp # to stdout
+                    #print hyp # to stdout
+
+                    #for MERT output
+                    print >> logs, "<score>%.3lf</score>" % score
+                    print >> logs, "<hyp>%s</hyp>" % hyp
+                    print >> logs, "<cost>%s</cost>" % fv
                     if k == 0:
+                        #for MERT output
+                        print hyp # to stdout
                         onebestscores += score
                         onebestbleus += (hyp, forest.refs)#forest.bleu.copy()
 
@@ -557,6 +567,9 @@ if __name__ == "__main__":
                     myoraclebleus += forest.bleu.copy()
                     myscores += mscore
 
+                # for MERT output
+                print >> logs, "</sent>"
+                
 #                 if FLAGS.compute_fear:
 #                     bleu, hyp, fv, edgelist = forest.compute_oracle(weights, 1, -1)
 #                     bleu = forest.bleu.rescore(hyp)
