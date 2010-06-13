@@ -33,7 +33,7 @@ class Rule(object):
 
     def __repr__(self):
         return "%s -> %s" % (self.lhs, \
-                             " ".join(s[1:-1] if s[0] == '"' else s \
+                             " ".join('"%s"' % s[1:-1] if s[0] == '"' else s \
                                     for s in self.rhs))
                      #        " ".join(quoteattr(s[1:-1]) if s[0] == '"' else s \
                       #                for s in self.rhs))
