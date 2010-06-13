@@ -134,11 +134,17 @@ class PatternMatching(object):
             # enumerate all the possible frags
             basefrags = [("%s(" % node.label, [], 1)]
             lastchild = len(edge.subs) - 1
-            for (id, sub) in enumerate(edge.subs):
-                oldfrags = basefrags
-                # cross-product
-                basefrags = [PatternMatching.combinetwofrags(oldfrag, frag, id, lastchild) \
-                                     for oldfrag in oldfrags for frag in sub.frags]
+            if len(edge.subs) >= 5: # this guy has too many children! it cannot be matched!
+                deflhs = "%s(%s)" % (node.label, " ".join(sub.label for sub in edge.subs))
+                defrhs = edge.subs
+                defheight = 2
+                basefrags = [(deflhs, defrhs, defheight)]
+            else:
+                for (id, sub) in enumerate(edge.subs):
+                    oldfrags = basefrags
+                    # cross-product
+                    basefrags = [PatternMatching.combinetwofrags(oldfrag, frag, id, lastchild) \
+                                 for oldfrag in oldfrags for frag in sub.frags]
 
             # for each frag add translation hyperedges
             for extfrag in basefrags:

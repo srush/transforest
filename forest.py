@@ -417,7 +417,7 @@ class Forest(object):
                     rule_print = "%s %s" % (edge.ruleid, repr(edge.rule)) #self.rules[edge.ruleid])
                     rulecache.add(edge.ruleid)
                 wordnum = sum([1 if type(x) is str else 0 for x in edge.lhsstr])
-                tailstr = " ".join(['"%s"' % x if type(x) is str else x.iden for x in edge.lhsstr])
+                tailstr = " ".join(['%s' % x if type(x) is str else x.iden for x in edge.lhsstr])
                 print >> out, "\t%s%s ||| %s ||| %s text-length=%d" \
                             % (is_oracle, tailstr, rule_print, edge.fvector, wordnum)
                      
@@ -492,9 +492,9 @@ if __name__ == "__main__":
     flags.DEFINE_float("hope", 0, "hope weight")
 
     argv = FLAGS(sys.argv)
-
+    # print >>logs, "references: %s" % " ".join(argv[1:])
     # "ref*" or "ref1 ref2..."
-    reffiles = [open(f) for f in argv]
+    reffiles = [open(f) for f in argv[1:]]
 
     weights = Model.cmdline_model()
   
@@ -516,7 +516,7 @@ if __name__ == "__main__":
  
     for i, forest in enumerate(Forest.load("-", transforest=FLAGS.trans)):
  
-        if forest.transforest:  # translation forest
+        if FLAGS.trans:  # translation forest
             if not FLAGS.infinite:
                 if FLAGS.k is None:
                     FLAGS.k = 1
@@ -603,7 +603,7 @@ if __name__ == "__main__":
             # convert pforest to tforest by pattern matching 
             stime = time.time()
             # default fields
-            deffields = "gt_prob=-100 plhs=-100 text-lenght=0"
+            deffields = "gt_prob=-50 proot=-50 prhs=-20 plhs=-20 lexpef=0 lexpfe=0"
             # inside replace
             pm = PatternMatching(forest, ruleset, \
                                  filtered_ruleset, deffields,

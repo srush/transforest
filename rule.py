@@ -33,8 +33,10 @@ class Rule(object):
 
     def __repr__(self):
         return "%s -> %s" % (self.lhs, \
-                             " ".join(quoteattr(s[1:-1]) if s[0] == '"' else s \
-                                      for s in self.rhs))
+                             " ".join(s[1:-1] if s[0] == '"' else s \
+                                    for s in self.rhs))
+                     #        " ".join(quoteattr(s[1:-1]) if s[0] == '"' else s \
+                      #                for s in self.rhs))
     def tree_size(self):
         '''number of non-variable nodes in lhs tree'''
         # TODO: -LRB--

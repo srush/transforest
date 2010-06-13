@@ -8,6 +8,9 @@ import sys
 def quoteattr(s):
     return '"%s"' % s.replace('\\','\\\\').replace('"', '\\"')
 
+def dequoteattr(s):
+    return '%s' % s[1:-1].replace('\\\\','\\').replace('\\"','"')
+
 def quantize(v):
     if v <= 2:
         return v
