@@ -418,7 +418,7 @@ class Forest(object):
                     rulecache.add(edge.ruleid)
                 wordnum = sum([1 if type(x) is str else 0 for x in edge.lhsstr])
                 tailstr = " ".join(['%s' % x if type(x) is str else x.iden for x in edge.lhsstr])
-                print >> out, "\t%s%s ||| %s ||| %s text-length=%d" \
+                print >> out, "\t%s%s ||| %s ||| %s rule-num=1 text-length=%d" \
                             % (is_oracle, tailstr, rule_print, edge.fvector, wordnum)
                      
         print >> out  ## last blank line
@@ -563,6 +563,11 @@ if __name__ == "__main__":
                     print >> logs, "moracle\tscore=%.4lf\tbleu+1=%.4lf\tlenratio=%.2lf\t%s" % \
                           (mscore, forest.bleu.fscore(), forest.bleu.ratio(), fv)
                     print >> logs, hyp
+
+                    #for MERT output
+                    #print >> logs, "<score>%.3lf</score>" % mscore
+                    #print >> logs, "<hyp>%s</hyp>" % hyp
+                    #print >> logs, "<cost>%s</cost>" % fv
                 
                     myoraclebleus += forest.bleu.copy()
                     myscores += mscore
@@ -627,6 +632,7 @@ if __name__ == "__main__":
     
     # dump filtered rule set
     if FLAGS.rulefilter:
+        print >> logs, "Start line of filtered rule set .... "
         for (lhs, rules) in filtered_ruleset.iteritems():
             for rule in rules:
                 print >> logs, "%s" % rule
