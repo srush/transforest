@@ -47,8 +47,14 @@ class PatternMatching(object):
                 #appedn the lexical frag (lhs, rhs, height) = (PU("."), [], 1)
                 frag = self.lexfrag(node)
                 node.frags.append(frag)
+
+                # NOTICE: Clear the original prasing hyperedges
+                node.edges = []
                 # add lexical translation hyperedges
-                self.add_lex_th(frag[0], node)
+                self.add_lex_th(frag[0], node, False)
+
+                # add phrase
+                self.add_lex_th('"%s"' % node.word, node, True)
                 
             else:  # it's a non-terminal node
                 #append the default frag (lhs, rhs, height) = (PU, node, 0)
@@ -56,6 +62,9 @@ class PatternMatching(object):
                 # add non-terminal translation hyperedges
                 self.add_nonter_th(node)
 
+                # add phrase
+                self.add_lex_th('"%s"' % node.surface, node, True)
+                
         self.remove_unreach()
         
         return forest
@@ -101,10 +110,9 @@ class PatternMatching(object):
        
         return (lhs, rhs, height)
 
-    def add_lex_th(self, lhs, node):
+    def add_lex_th(self, lhs, node, isBP):
         ''' add lexical translation rules '''
         ruleset = self.ruleset
-        node.edges = []
         if lhs in ruleset:
             rules = ruleset[lhs]
 
@@ -118,7 +126,7 @@ class PatternMatching(object):
                 tfedge.rule = rule
                 node.edges.append(tfedge)
                         
-        else: # add a default translation hyperedge (monotonic)
+        elif not isBP: # add a default translation hyperedge (monotonic)
             defword = '"%s"' % node.word
             rule = Rule(lhs, [defword], self.deffields)
             tfedge = Hyperedge(node, [], Vector(self.deffields), [defword])

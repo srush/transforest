@@ -55,10 +55,9 @@ class Node(Tree):
         
         #new features
         self.frags = []
-        self.tfedges = []
+        #self.tfedges = []
 
         ## N.B.: parse forest node can be termllinal
-        
         word = sent[self.span[0]] if (size == 0) else None
 
         ## now in MT forest, nodes are always non-final. hyperedges can be final (terminal).
@@ -72,6 +71,8 @@ class Node(Tree):
 
         self._bin_len = None
 
+        # surface string
+        self.surface = '%s' % ''.join(sent[self.span[0]:self.span[1]])
 
     def prepare_kbest(self):
         self.klist = []

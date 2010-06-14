@@ -50,6 +50,9 @@ class RuleSet(defaultdict):
         defaultdict.__init__(self, list) # N.B. superclass
         self.ruleid = 0
         print >> logs, "reading rules from %s ..." % rulefilename
+        self.add_rulefromfile(rulefilename)
+        
+    def add_rulefromfile(self, rulefilename):
         otime = time.time()
         bad = 0
         for i, line in enumerate(open(rulefilename), 1):
@@ -63,11 +66,15 @@ class RuleSet(defaultdict):
             
         print >> logs, "\ntotal %d rules (%d BAD) read in %d secs" % (i, bad, time.time() - otime)
 
+    def add_bp(self, bpfile):
+        print >> logs, 'reading bp rules from %s ...' % bpfile
+        self.add_rulefromfile(bpfile)
+        
     def add_rule(self, rule):
         self[rule.lhs].append(rule)
         rule.ruleid = self.ruleid
         self.ruleid += 1
- 
+        
     def rule_num(self):
         return self.ruleid
 

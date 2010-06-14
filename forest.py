@@ -70,7 +70,7 @@ class Forest(object):
         self.num_edges = sum([len(node.edges) for node in self])
 
     def size(self):
-        ''' return (num_nodes, num_tfedges) pair '''
+        ''' return (num_nodes, num_edges) pair '''
         return len(self.nodes), self.num_edges 
 
     def update_nodes(self, reachable):
@@ -100,7 +100,7 @@ class Forest(object):
         self.cells = {}   # cells [(2,3)]...
         self.num_edges = 0
         
-        self.num_tfedges = 0
+        #self.num_tfedges = 0
 
         self.weights = base_weights # baseline
 
@@ -482,6 +482,7 @@ if __name__ == "__main__":
 
     flags.DEFINE_boolean("trans", False, "translation forest instead of parse forest", short_name="t")
     flags.DEFINE_string("ruleset", None, "translation rule set (parse => trans)", short_name="r")
+    flags.DEFINE_string("phrase", None, "bilingual phrase from Moses")
     flags.DEFINE_boolean("oracle", False, "compute oracles")
     flags.DEFINE_integer("kbest", 1, "kbest", short_name="k")
     flags.DEFINE_boolean("dump", False, "dump forest (to stdout)")    
@@ -500,8 +501,12 @@ if __name__ == "__main__":
   
     if FLAGS.ruleset is not None:
         ruleset = RuleSet(FLAGS.ruleset)
-        Forest.globalruleid = ruleset.rule_num()
+        
+        if FLAGS.phrase is not None:
+            ruleset.add_bp(FLAGS.phrase)
 
+        Forest.globalruleid = ruleset.rule_num()
+    
     davidoraclebleus = Bleu()
 
     myoraclebleus = Bleu()
@@ -608,7 +613,7 @@ if __name__ == "__main__":
             # convert pforest to tforest by pattern matching 
             stime = time.time()
             # default fields
-            deffields = "gt_prob=-50 proot=-50 prhs=-20 plhs=-20 lexpef=0 lexpfe=0"
+            deffields = "gt_prob=-50 proot=-50 prhs=-20 plhs=-20 lexpef=-10 lexpfe=-10"
             # inside replace
             pm = PatternMatching(forest, ruleset, \
                                  filtered_ruleset, deffields,
