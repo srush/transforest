@@ -420,7 +420,14 @@ class Tree(object):
                    self.label, " ".join(sub.label for sub in self.subs))
 
             return nid+1, eid+1, subs
-        
+
+    def pp(self, level=0):
+        if hasattr(self, "subs"):
+            print "%s%s" % ("| " * level, self.label)
+            for sub in self.subs:
+                sub.pp(level+1)
+        else:
+            print "%s%s %s" % ("| " * level, self.label, self.word)
             
 ###########################################
 
@@ -439,6 +446,7 @@ def print_forest(tree, tid=0):
 if __name__ == "__main__":
 
     flags.DEFINE_integer("max_len", 400, "maximum sentence length")
+    flags.DEFINE_boolean("pp", False, "pretty print")
     flags.DEFINE_boolean("toforest", False, "convert to trivial forest")
     argv = FLAGS(sys.argv)
 
@@ -447,5 +455,7 @@ if __name__ == "__main__":
         if len(t) <= FLAGS.max_len:
             if FLAGS.toforest:
                 print_forest(t, tid=i)
+            elif FLAGS.pp:
+                t.pp()
             else:
                 print t
