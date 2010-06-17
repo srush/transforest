@@ -173,7 +173,7 @@ class Forest(object):
         self.root.lazykbest(k)
 
         if threshold is not None:
-            for i, (sc, tr) in enumerate(self.root.klist):
+            for i, (sc, tr, fv) in enumerate(self.root.klist):
                 if sc > bestscore + threshold:
                     self.root.klist = self.root.klist[:i]
                     break            
@@ -417,7 +417,7 @@ class Forest(object):
                     rule_print = "%s %s" % (edge.ruleid, repr(edge.rule)) #self.rules[edge.ruleid])
                     rulecache.add(edge.ruleid)
                 wordnum = sum([1 if type(x) is str else 0 for x in edge.lhsstr])
-                tailstr = " ".join(['%s' % x if type(x) is str else x.iden for x in edge.lhsstr])
+                tailstr = " ".join(['"%s"' % x if type(x) is str else x.iden for x in edge.lhsstr])
                 print >> out, "\t%s%s ||| %s ||| %s rule-num=1 text-length=%d" \
                             % (is_oracle, tailstr, rule_print, edge.fvector, wordnum)
                      

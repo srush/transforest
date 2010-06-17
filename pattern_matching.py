@@ -122,14 +122,15 @@ class PatternMatching(object):
 
             # add all translation hyperedges
             for rule in rules:
-                tfedge = Hyperedge(node, [], Vector(rule.fields), rule.rhs)
+                newrhs = [x[1:-1] for x in rule.rhs]
+                tfedge = Hyperedge(node, [], Vector(rule.fields), newrhs)
                 tfedge.rule = rule
                 node.edges.append(tfedge)
                         
         elif not isBP: # add a default translation hyperedge (monotonic)
             defword = '"%s"' % node.word
             rule = Rule(lhs, [defword], self.deffields)
-            tfedge = Hyperedge(node, [], Vector(self.deffields), [defword])
+            tfedge = Hyperedge(node, [], Vector(self.deffields), [defword[1:-1]])
             tfedge.rule = rule
             ruleset.add_rule(rule)
             node.edges.append(tfedge)
@@ -175,7 +176,7 @@ class PatternMatching(object):
 
                     # add all translation hyperedges
                     for rule in rules:
-                        rhsstr = [x if x[0]=='"' \
+                        rhsstr = [x[1:-1] if x[0]=='"' \
                                           else extrhs[int(x.split('x')[1])] \
                                           for x in rule.rhs]
                         tfedge = Hyperedge(node, extrhs,\

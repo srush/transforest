@@ -5,6 +5,9 @@ import sys
 import time
 logs = sys.stderr
 
+import gflags as flags
+FLAGS=flags.FLAGS
+
 from utility import quoteattr
 
 class Rule(object):
@@ -119,4 +122,3 @@ if __name__ == "__main__":
     print >> logs, "\t %d rhs=null; %d bad ratio; %d no alignment" % (bad_null, bad_ratio, bad_noalign)
     print >> logs, "\t %.2lf rhs=null; %.2lf bad ratio; %.2lf no alignment" %\
           (float(bad_null)/float(i), float(bad_ratio)/float(i), float(bad_noalign)/float(i))
-    print >> logs, "total number of unique lhs rules left: " % len(filteredrs)
