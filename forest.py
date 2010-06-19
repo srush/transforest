@@ -374,7 +374,7 @@ class Forest(object):
 
     def subtree(self):
         for node in self:
-            print node.psubtree()
+            node.psubtree()
 
     def dump(self, out=sys.stdout):
         '''output to stdout'''
