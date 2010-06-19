@@ -182,7 +182,7 @@ class Forest(object):
               (self.tag, k, time.time() - basetime)
 
     @staticmethod
-    def load(filename, transforest=False, lower=True, sentid=0):
+    def load(filename, transforest=False, lower=False, sentid=0):
         '''now returns a generator! use load().next() for singleton.
            and read the last line as the gold tree -- TODO: optional!
            and there is an empty line at the end
@@ -340,7 +340,7 @@ class Forest(object):
 
             if line is not None and line.strip() != "":
                 if line[0] == "(":
-                    forest.goldtree = Tree.parse(line.strip(), trunc=True, lower=True)
+                    forest.goldtree = Tree.parse(line.strip(), trunc=True, lower=False)
                     line = file.readline()
             else:
                 line = None
@@ -491,6 +491,7 @@ if __name__ == "__main__":
     flags.DEFINE_integer("first", None, "first N forests only")
     flags.DEFINE_boolean("rulefilter", False, "dump filtered ruleset")    
     flags.DEFINE_float("hope", 0, "hope weight")
+    flags.DEFINE_boolean("mert", True, "output mert-friendly info (<hyp><cost)")    
 
     argv = FLAGS(sys.argv)
     # print >>logs, "references: %s" % " ".join(argv[1:])
@@ -543,9 +544,11 @@ if __name__ == "__main__":
                     #print hyp # to stdout
 
                     #for MERT output
-                    print >> logs, "<score>%.3lf</score>" % score
-                    print >> logs, "<hyp>%s</hyp>" % hyp
-                    print >> logs, "<cost>%s</cost>" % fv
+                    if FLAGS.mert:
+                        print >> logs, "<score>%.3lf</score>" % score
+                        print >> logs, "<hyp>%s</hyp>" % hyp
+                        print >> logs, "<cost>%s</cost>" % fv
+                        
                     if k == 0:
                         #for MERT output
                         print hyp # to stdout

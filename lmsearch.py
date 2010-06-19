@@ -20,13 +20,16 @@ class Decoder(object):
     def add_state(self, new):
         ''' adding a new state to the appropriate beam, and checking finality. '''
 
-        beam = self.beams[new.step]        
+        beam = self.beams[new.step]
+
+        if new.step > self.max_step:
+            self.max_step = new.step
         
         if new not in beam or new < beam[new]: # TODO
             
             beam[new] = new
             if FLAGS.debuglevel >= 2:
-                print >> logs, "state %s added to beam %d" % (new, new.step)
+                print >> logs, "adding to beam %d: %s" % (new.step, new)
 
             if new.is_final():
                 if FLAGS.debuglevel >= 2:
@@ -41,21 +44,21 @@ class Decoder(object):
 
         self.best = None
         
-        max_step = len(forest.sent) * 6 + 1
-        print "max", max_step
         beams = defaultdict(dict)
         self.beams = beams
         
+        self.max_step = -1
         self.add_state(LMState.start_state(forest.root)) # initial state
 
         self.nstates = 0  # space complexity
         self.nedges = 0 # time complexity
 
-        for i in range(0, max_step+1):
+        i = 0
+        while i <= self.max_step:
 
             curr_beam = sorted(beams[i].keys())[:b]  # beam pruning
             
-            if FLAGS.debuglevel >= 2:
+            if FLAGS.debuglevel >= 1:
                 print >> logs, "beam %d, %d states" % (i, len(curr_beam))
                 print >> logs, "\n".join([str(x) for x in curr_beam])
                 print >> logs
@@ -67,6 +70,8 @@ class Decoder(object):
 
                     for new in old.complete():
                         self.add_state(new)
+
+            i += 1
 
         return self.best.score, self.best.trans()
     

@@ -423,11 +423,11 @@ class Tree(object):
 
     def pp(self, level=0):
         if hasattr(self, "subs"):
-            print "%s%s" % ("| " * level, self.label)
+            print "%s%s" % ("| " * level, self.labelspan())
             for sub in self.subs:
                 sub.pp(level+1)
         else:
-            print "%s%s %s" % ("| " * level, self.label, self.word)
+            print "%s%s %s" % ("| " * level, self.labelspan(), self.word)
             
 ###########################################
 
