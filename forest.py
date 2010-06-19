@@ -373,10 +373,8 @@ class Forest(object):
         return forests
 
     def subtree(self):
-        print "-----------------------------"
         for node in self:
             print node.psubtree()
-        print "____________________________"
 
     def dump(self, out=sys.stdout):
         '''output to stdout'''
