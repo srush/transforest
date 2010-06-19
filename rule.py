@@ -40,6 +40,15 @@ class Rule(object):
                                     for s in self.rhs))
                      #        " ".join(quoteattr(s[1:-1]) if s[0] == '"' else s \
                       #                for s in self.rhs))
+
+    def bp_print(self, subtree):
+        # ATTENTION:
+        if not self.is_bp():
+            subtree = self.lhs
+        return "%s -> %s" % (subtree, \
+                             " ".join('"%s"' % s[1:-1] if s[0] == '"' else s \
+                                    for s in self.rhs))
+
     def tree_size(self):
         '''number of non-variable nodes in lhs tree'''
         # TODO: -LRB--

@@ -62,6 +62,9 @@ class Node(Tree):
         self.frags = []
         #self.tfedges = []
 
+        #new feature: subtree str created for bp rules, NP(NN 'ch') -> lhs(bp) ### feats 
+        self.subtree = ''
+        
         ## N.B.: parse forest node can be termllinal
         word = sent[self.span[0]] if (size == 0) else None
 
@@ -79,6 +82,19 @@ class Node(Tree):
         # surface string
         self.surface = '%s' % ''.join(sent[self.span[0]:self.span[1]])
 
+    def psubtree(self):
+        if self.subtree != '':
+            return self.subtree
+        else:
+            if self.is_terminal():
+                self.subtree = '%s("%s")' % (self.label, self.word)
+                return self.subtree
+            else:
+                self.subtree = '%s(%s)' % \
+                               (self.label, ' '.join(sub.psubtree() for sub in self.edges[0].subs))
+                return self.subtree
+                             
+                
     def prepare_kbest(self):
         self.klist = []
         self.kset = set()

@@ -350,7 +350,10 @@ class Forest(object):
             if num_sents % 100 == 0:
                 print >> logs, "... %d sents loaded (%.2lf secs per sent) ..." \
                       % (num_sents, total_time/num_sents)
+
                 
+            forest.subtree() #compute the subtree string for each node
+
             yield forest
 
         # better check here instead of zero-division exception
@@ -369,6 +372,12 @@ class Forest(object):
             forests.append(forest)
         return forests
 
+    def subtree(self):
+        print "-----------------------------"
+        for node in self:
+            print node.psubtree()
+        print "____________________________"
+
     def dump(self, out=sys.stdout):
         '''output to stdout'''
         # wsj_00.00       No , it was n't Black Monday .
@@ -378,7 +387,7 @@ class Forest(object):
         # 6    NP [0-2]    1 ||| 21213=... 7987=...
         #     1 4 ||| 0=-5.342
         # ...
-
+        
         if type(out) is str:
             out = open(out, "wt")
 
@@ -414,7 +423,8 @@ class Forest(object):
                 if edge.ruleid in rulecache:
                     rule_print = str(edge.ruleid)
                 else:
-                    rule_print = "%s %s" % (edge.ruleid, repr(edge.rule)) #self.rules[edge.ruleid])
+                    rule_print = "%s %s" % \
+                                 (edge.ruleid, edge.rule.bp_print(node.subtree))
                     rulecache.add(edge.ruleid)
                 wordnum = sum([1 if type(x) is str else 0 for x in edge.lhsstr])
                 tailstr = " ".join(['"%s"' % x if type(x) is str else x.iden for x in edge.lhsstr])
@@ -616,7 +626,7 @@ if __name__ == "__main__":
             # convert pforest to tforest by pattern matching 
             stime = time.time()
             # default fields
-            deffields = "gt_prob=-50 proot=-50 prhs=-20 plhs=-20 lexpef=-10 lexpfe=-10"
+            deffields = "gt_prob=-50 proot=-50 prhs=-20 plhs=-20 lexpef=-10 lexpfe=-10 count1=0 count2_3=0 count4=0 prhs_var=-20 plhs_var=-20 ghkm_num=0 bp_num=0 def_num=1"
             # inside replace
             pm = PatternMatching(forest, ruleset, \
                                  filtered_ruleset, deffields,
