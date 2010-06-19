@@ -32,16 +32,14 @@ class Decoder(object):
                 print >> logs, "adding to beam %d: %s" % (new.step, new)
 
             if new.is_final():
-                if FLAGS.debuglevel >= 2:
+                if FLAGS.debuglevel >= 1:
                     print >> logs, "new final state!"
-                if self.best is None or new.score < self.best.score:
-                    self.best = new
 
-#         elif new in beam:
-#             print >> logs, "WARNING recomb", new.score, beam[new].score
+                self.final_items.append(new)
         
     def beam_search(self, forest, b=1):
 
+        self.final_items = []
         self.best = None
         
         beams = defaultdict(dict)
@@ -73,12 +71,15 @@ class Decoder(object):
 
             i += 1
 
-        return self.best.score, self.best.trans()
+        self.final_items.sort()
+        
+        return self.final_items[0], self.final_items
     
 if __name__ == "__main__":
 
     flags.DEFINE_integer("beam", 1, "beam size", short_name="b")
     flags.DEFINE_integer("debuglevel", 0, "debug level")
+    flags.DEFINE_boolean("mert", True, "output mert-friendly info (<hyp><cost)")    
 
     from ngram import Ngram
     from model import Model
@@ -100,7 +101,10 @@ if __name__ == "__main__":
     for i, forest in enumerate(Forest.load("-", transforest=True), 1):
 
         t = time.time()
-        score, trans = decoder.beam_search(forest, b=FLAGS.beam)
+        
+        best, final_items = decoder.beam_search(forest, b=FLAGS.beam)
+        score, trans, fv = best.score, best.trans(), best.fvector
+
         t = time.time() - t
         tot_time += t
 
@@ -108,9 +112,22 @@ if __name__ == "__main__":
         forest.bleu.rescore(trans)
         tot_bleu += forest.bleu
 
-        print >> logs, ("sent %d, b %d\tscore %.4lf\tbleu+1 %.4lf\tlenratio %.2lf" + \
+        print >> logs, ("sent %d, b %d\tk %d\tscore %.4lf\tbleu+1 %.4lf\tlenratio %.2lf" + \
               "\ttime %.3lf\tlen %-3d  nodes %-4d  edges %-5d") % \
-              ((i, FLAGS.beam, score) + forest.bleu.score_ratio() + (t, len(forest.sent)) + forest.size())
+              ((i, FLAGS.beam, len(final_items), score) \
+               + forest.bleu.score_ratio() + (t, len(forest.sent)) + forest.size())
+        
+        if FLAGS.mert: # <score>... <hyp> ...
+            print >> logs, '<sent No="%d">' % i
+            print >> logs, "<Chinese>%s</Chinese>" % " ".join(forest.cased_sent)
+
+            for item in final_items:
+                print >> logs, "<score>%.3lf</score>" % item.score
+                print >> logs, "<hyp>%s</hyp>" % item.trans()
+                print >> logs, "<cost>%s</cost>" % item.fvector
+
+            print >> logs, "</sent>"
+            
         print trans
 
     print >> logs, "avg %d sentences, b %d\tscore %.4lf\tbleu %.4lf\tlenratio %.2lf\ttime %.3lf" % \

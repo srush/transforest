@@ -44,6 +44,10 @@ class Rule(object):
         '''number of non-variable nodes in lhs tree'''
         # TODO: -LRB--
         return self.lhs.count("(") - self.lhs.count("\"(") # LRB
+
+    def is_bp(self):
+        '''am i bilingual phrase rule?'''
+        return self.lhs.count("(") == 0
     
 class RuleSet(defaultdict):
     ''' map from lhs to a list of Rule '''

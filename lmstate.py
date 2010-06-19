@@ -5,6 +5,11 @@ from node_and_hyperedge import Hyperedge, Node
 from svector import Vector
 from rule import Rule
 
+import gflags as flags
+FLAGS=flags.FLAGS
+
+flags.DEFINE_boolean("dp", False, "dynamic programming")    
+
 class DottedRule(object):
 
     __slots__ = "edge", "dot"
@@ -48,7 +53,7 @@ class LMState(object):
 
     ''' stack is a list of dotted rules(hyperedges, dot_position) '''
     
-    __slots__ = "stack", "_trans", "score", "step"
+    __slots__ = "stack", "_trans", "score", "step", "fvector"
 
     weights = None
     lm = None
@@ -67,11 +72,12 @@ class LMState(object):
         edge.rule = Rule.parse("ROOT(TOP) -> x0 ### ")        
         return LMState([DottedRule(edge, dot=len(lmstr))], LMState.lm.startsyms(), 0, 0)
 
-    def __init__(self, stack, trans, score=0, step=0):
+    def __init__(self, stack, trans, score=0, step=0, fvector=Vector()):
         self.stack = stack
         self._trans = trans
         self.score = score
         self.step = step
+        self.fvector = fvector
         self.scan()
 
     def predict(self):
@@ -83,11 +89,12 @@ class LMState(object):
                     yield LMState(self.stack + [DottedRule(edge)], 
                                   self._trans[:], 
                                   self.score + edge.fvector.dot(LMState.weights),
-                                  self.step + edge.rule.tree_size())
+                                  self.step + edge.rule.tree_size(),
+                                  self.fvector + edge.fvector)
 
     def lmstr(self):
         # TODO: cache real lmstr
-        return self._trans[-LMState.lm.order+1:]
+        return self._trans[-LMState.lm.order+1:] if FLAGS.dp else self._trans
 
     def scan(self):
         while not self.end_of_rule():
@@ -96,7 +103,9 @@ class LMState(object):
                 this = LMState.lm.word2index(symbol)
                 self.stack[-1].advance() # dot ++
                 #TODO fix ngram
-                self.score += LMState.lm.ngram.wordprob(this, self.lmstr()) * LMState.weights.lm_weight
+                lmscore = LMState.lm.ngram.wordprob(this, self.lmstr())
+                self.score += lmscore * LMState.weights.lm_weight
+                self.fvector["lm"] += lmscore
                 self._trans += [this,]
             else:
                 break
@@ -110,7 +119,8 @@ class LMState(object):
             yield LMState(self.stack[:-2] + [self.stack[-2].advanced()], 
                           self._trans[:],
                           self.score, 
-                          self.step + self.stack[-1].tree_size())
+                          self.step + self.stack[-1].tree_size(),
+                          Vector(self.fvector)) # copy.copy is slow
 
     def __eq__(self, other):
         ## calls DottedRule.__eq__()

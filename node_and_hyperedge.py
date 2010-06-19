@@ -30,6 +30,11 @@ from utility import symbol, desymbol
 
 print_duplicates = False
 
+import gflags as flags
+FLAGS=flags.FLAGS
+
+flags.DEFINE_boolean("bp", True, "use BP rules")
+
 class Node(Tree):
     ''' Node is based on Tree so that it inherits various functions like binned_len and is_terminal. '''
 
@@ -145,25 +150,27 @@ class Node(Tree):
 
             self.bestedge = None
             for edge in self.edges:
-                ## weights are attached to the forest, shared by all nodes and hyperedges
-                score = edge.edge_score = edge.fvector.dot(weights)  # TODO
-                fvector = edge.fvector.__copy__() ## N.B.! copy! TODO
-                subtrees = []
-                for sub in edge.subs:
-                    sc, tr, fv = sub.bestparse(weights, dep+1)
-                    score += sc
-                    fvector += fv
-                    subtrees.append(tr)
+                if FLAGS.bp or not edge.rule.is_bp():
+                    
+                    ## weights are attached to the forest, shared by all nodes and hyperedges
+                    score = edge.edge_score = edge.fvector.dot(weights)  # TODO
+                    fvector = edge.fvector.__copy__() ## N.B.! copy! TODO
+                    subtrees = []
+                    for sub in edge.subs:
+                        sc, tr, fv = sub.bestparse(weights, dep+1)
+                        score += sc
+                        fvector += fv
+                        subtrees.append(tr)
 
-                tree = edge.assemble(subtrees)
+                    tree = edge.assemble(subtrees)
 
-                edge.beta = score
+                    edge.beta = score
 
-                if self.bestedge is None or score < self.bestedge.beta:
-##                    print >> logs, self, edge
-                    self.bestedge = edge
-                    self.besttree = tree
-                    best_fvector = fvector
+                    if self.bestedge is None or score < self.bestedge.beta:
+    ##                    print >> logs, self, edge
+                        self.bestedge = edge
+                        self.besttree = tree
+                        best_fvector = fvector
 
             self.beta = self.bestedge.beta + self.node_score
             best_fvector += self.fvector ## nodefvector
