@@ -58,7 +58,7 @@ def normalize(s):
     s = xml.sax.saxutils.unescape(s, {'&quot;':'"'}) # &amp; &lt; &gt; ?
     # language-dependent part (assuming Western languages):
     s = " %s " % s
-    if not preserve_case:
+    if not FLAGS.preserve_case:
         s = s.lower()         # this might not be identical to the original
     for (pattern, replace) in normalize2:
         s = re.sub(pattern, replace, s)
