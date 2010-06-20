@@ -25,10 +25,10 @@ import gflags as flags
 FLAGS=flags.FLAGS
 
 flags.DEFINE_boolean("preserve_case", True, "preserve case", short_name="c")
-flags.DEFINE_boolean("nist_tokenize", False, "nist tokenize")
+flags.DEFINE_boolean("nist_tokenize", True, "nist tokenize")
 flags.DEFINE_boolean("clip_len", False, "clip length")
 flags.DEFINE_string("eff_ref_len", "closest", "effective length ratio: closest, average, shortest", short_name="len")    
-flags.DEFINE_boolean("latin", True, "remove non-latin_1 chars")
+flags.DEFINE_boolean("latin", False, "remove non-latin_1 chars")
 
 logs = sys.stderr
 
@@ -180,7 +180,7 @@ class Bleu(object):
         new._score = None
         return new
 
-    def __init__(self, test=None, refs=None, option="average", n=4, special_reflen=None):
+    def __init__(self, test=None, refs=None, n=4, special_reflen=None):
         ''' singular instance '''
 
         self.n = n
@@ -346,7 +346,7 @@ if __name__ == "__main__":
     infile = fileinput.input(argv[1]) # "-" OK
     reffilenames = argv[2:]
 
-    bleus = Bleu(option=FLAGS.eff_ref_len)
+    bleus = Bleu()
 
     ## STEP 0: READ IN TESTS
     testlines = []
@@ -368,8 +368,8 @@ if __name__ == "__main__":
             testline = remove_nonlatin(testline, i)            
         bleus += (testline, ref)
 
-    ## STEP 3: EVALUATE
+    ## STEP 3: EVALUATE (with effective ref len)
     bleu = bleus.fscore(option=FLAGS.eff_ref_len)
     ratio = bleus.ratio()
-    print >> logs, "bleu%s = %.4lf, length_ratio = %.2lf (%d sentences, length option \"%s\")" \
-          % ("+1" if bleus.size() == 1 else "", bleu, ratio, bleus.size(), FLAGS.eff_ref_len)
+    print >> logs, "bleu%s = %.4lf, length_ratio = %.2lf (%d sentences, length option \"%s\", nist_tokenize: %s)" \
+          % ("+1" if bleus.size() == 1 else "", bleu, ratio, bleus.size(), FLAGS.eff_ref_len, FLAGS.nist_tokenize)
