@@ -206,7 +206,11 @@ class Bleu(object):
         return self._ratio
 
     def score_ratio(self, option=None):
+        '''return (bleu, len_ratio) pair'''
         return (self.fscore(option=option), self.ratio(option=option))
+
+    def score_ratio_str(self, option=None):
+        return "%.4f (%.2f)" % self.score_ratio(option)
 
     def reflen(self, option=None):
         self.compute_score(option=option)

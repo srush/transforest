@@ -50,6 +50,8 @@ cache_same = False
 
 base_weights = Vector("lm1=2 gt_prob=1 plhs=1 text-length=1")
 
+flags.DEFINE_integer("first", None, "first N forests only")
+
 class Forest(object):
     ''' a collection of nodes '''
 
@@ -165,29 +167,38 @@ class Forest(object):
                 yield ret
         
     def lazykbest(self, k, weights=base_weights, sentid=0, threshold=None):
+        '''return 1-best and k-best times'''
 
-        basetime = time.time()
-
+        basetime = time.time()        
         bestscore = self.prep_kbest(weights)
-        
-        self.root.lazykbest(k)
+        onebest = time.time()        
+
+        if k > 1:
+            # TODO: remove redundant work in k-best
+            self.root.lazykbest(k)
+        else:
+            self.root.klist = [self.root.bestres]
+            
+        kbest = time.time()
 
         if threshold is not None:
             for i, (sc, tr, fv) in enumerate(self.root.klist):
                 if sc > bestscore + threshold:
                     self.root.klist = self.root.klist[:i]
-                    break            
+                    break
 
-        print >> logs, "sent #%s, %d-best computed in %.2lf secs" % \
-              (self.tag, k, time.time() - basetime)
-
+        return onebest - basetime, kbest - basetime
+                
     @staticmethod
-    def load(filename, transforest=False, lower=False, sentid=0):
+    def load(filename, transforest=False, lower=False, sentid=0, first=None):
         '''now returns a generator! use load().next() for singleton.
            and read the last line as the gold tree -- TODO: optional!
            and there is an empty line at the end
         '''
 
+        if first is None: # N.B.: must be here, not in the param line (after program initializes)
+            first = FLAGS.first
+            
         file = getfile(filename)
         line = None
         total_time = 0
@@ -351,14 +362,16 @@ class Forest(object):
                 print >> logs, "... %d sents loaded (%.2lf secs per sent) ..." \
                       % (num_sents, total_time/num_sents)
 
-                
             forest.subtree() #compute the subtree string for each node
 
             yield forest
 
+            if first is not None and num_sents >= first:
+                break                
+
         # better check here instead of zero-division exception
         if num_sents == 0:
-            print >> logs, "No Forests Found! (empty input file?)"
+            print >> logs, "NO FORESTS FOUND!!! (empty input file?)"            
             yield None # new: don't halt
         
         Forest.load_time = total_time
@@ -460,33 +473,29 @@ class Forest(object):
 
 
         basetime = time.time()
-        bleu, hyp, fv, edgelist = self.root.compute_oracle(weights, self.bleu, \
-                                                                                                             self.len, self.wlen, \
-                                                                                                             model_weight, bleu_weight)
+        bleu, hyp, fv, edgelist = self.root.compute_oracle(weights, self.bleu,
+                                                           self.len, self.wlen,
+                                                           model_weight, bleu_weight)
         bleu = self.bleu.rescore(hyp) ## for safety, 755 bug
         
-##        fv2 = Hyperedge.deriv2fvector(edgelist)
-##        assert str(fv) == str(fv2), "\n%s\n%s" % (fv, fv2)
-##        hyp = " ".join(hyp)
-##        print >> logs, "my oracle computed in %.2lf secs" % (time.time() - basetime)
-
         if store_oracle:
             for edge in edgelist:
                 edge.head.oracle_edge = edge
                 
         return bleu, hyp, fv, edgelist
 
+###
+def output_avg_stats():
+
+    print >> logs,  "overall %d sents 1-best deriv bleu = %s score = %.4f\t1-best %.3f secs  %d-best %.3f secs" \
+          % (i, onebestbleus.score_ratio_str(), onebestscores/i, total1besttime/i, FLAGS.k, totalkbesttime/i)
+
+    if FLAGS.oracle:
+        print >> logs,  "overall %d sents my    oracle bleu = %s score = %.4lf\t  time %.3f secs" \
+              % (i, myoraclebleus.score_ratio_str(), myscores/i, totaloracletime/i)
+
+
 if __name__ == "__main__":
-
-    # TODO: translate all these to gflags
-#     optparser.add_option("", "--id", dest="sentid", type=int, help="sentence id", metavar="ID", default=0)
-#     optparser.add_option("", "--first", dest="first", type=str, \
-#                          help="only first F forests", metavar="F", default=None)
-#     optparser.add_option("", "--fear", dest="compute_fear", action="store_true", help="compute fears", default=False)
-#     optparser.add_option("", "--hope", dest="hope", type=float, help="hope weight", default=0)
-#     optparser.add_option("", "--recover", dest="recover_oracle", action="store_true", help="recover oracles", default=False)
-
-#    (opts, args) = optparser.parse_args()
 
     flags.DEFINE_boolean("trans", False, "translation forest instead of parse forest", short_name="t")
     flags.DEFINE_string("ruleset", None, "translation rule set (parse => trans)", short_name="r")
@@ -496,14 +505,11 @@ if __name__ == "__main__":
     flags.DEFINE_boolean("dump", False, "dump forest (to stdout)")    
     flags.DEFINE_boolean("infinite", False, "infinite-kbest")    
     flags.DEFINE_float("threshold", None, "threshold/margin")
-    flags.DEFINE_integer("first", None, "first N forests only")
     flags.DEFINE_boolean("rulefilter", False, "dump filtered ruleset")    
     flags.DEFINE_float("hope", 0, "hope weight")
     flags.DEFINE_boolean("mert", True, "output mert-friendly info (<hyp><cost)")    
 
     argv = FLAGS(sys.argv)
-    # print >>logs, "references: %s" % " ".join(argv[1:])
-    # "ref*" or "ref1 ref2..."
     reffiles = [open(f) for f in argv[1:]]
 
     weights = Model.cmdline_model()
@@ -526,19 +532,30 @@ if __name__ == "__main__":
     onebestscores = 0
     onebestbleus = Bleu()
     filtered_ruleset = {}
-    allctime = 0
- 
-    for i, forest in enumerate(Forest.load("-", transforest=FLAGS.trans)):
+    totalconvtime = 0
+    total1besttime = 0
+    totalkbesttime = 0
+    totaloracletime = 0
+    
+    for i, forest in enumerate(Forest.load("-", transforest=FLAGS.trans), 1):
  
         if FLAGS.trans:  # translation forest
             if not FLAGS.infinite:
                 if FLAGS.k is None:
                     FLAGS.k = 1
 
-                forest.lazykbest(FLAGS.k, weights=weights, sentid=forest.tag, threshold=FLAGS.threshold)
-                print >> logs, "%d\t%s" % (len(forest.root.klist), forest.tag)
-                print >> logs, '<sent No="%d">' % int(i+1)
-                print >> logs, "<Chinese>%s</Chinese>" % " ".join(forest.cased_sent)
+                onebesttime, kbesttime = \
+                             forest.lazykbest(FLAGS.k, weights=weights, sentid=forest.tag, threshold=FLAGS.threshold)
+                
+                print >> logs, "sent #%-4d\t1-best time %.3f secs, total %d-best time %.3f secs" % \
+                      (i, onebesttime, FLAGS.k, kbesttime)
+
+                total1besttime += onebesttime
+                totalkbesttime += kbesttime
+
+                if FLAGS.mert:
+                    print >> logs, '<sent No="%d">' % i
+                    print >> logs, "<Chinese>%s</Chinese>" % " ".join(forest.cased_sent)
                 
 ##                forest.root.print_derivation()
 
@@ -557,69 +574,41 @@ if __name__ == "__main__":
                         print >> logs, "<hyp>%s</hyp>" % hyp
                         print >> logs, "<cost>%s</cost>" % fv
                         
-                    if k == 0:
-                        #for MERT output
+                    if k == 0: #1-best
                         print hyp # to stdout
                         onebestscores += score
                         onebestbleus += (hyp, forest.refs)#forest.bleu.copy()
 
-#                 if FLAGS.recover_oracle:
-#                     oracle_bleu, oracle_hyp, oracle_fv = forest.recover_oracle()[:3]
-#                     oracle_score = oracle_fv.dot(weights)
-#                     oracle_hyp = (oracle_hyp)
-#                     davidoraclebleus += forest.bleu.copy()
-#                     davidscores += oracle_score
-#                     print >> logs,  "oracle\tscore=%.4lf\tbleu+1=%.4lf\tlenratio=%.2lf\n%s" % \
-#                                 (oracle_score, oracle_bleu, forest.bleu.ratio(), oracle_hyp)            
-
                 if FLAGS.oracle:
+                    basetime = time.time()
+
                     bleu, hyp, fv, edgelist = forest.compute_oracle(weights, FLAGS.hope, 1)
+
+                    oracletime = time.time() - basetime
+                    totaloracletime += oracletime
+                    
                     bleu = forest.bleu.rescore(hyp)
                     mscore = weights.dot(fv)
                     print >> logs, "moracle\tscore=%.4lf\tbleu+1=%.4lf\tlenratio=%.2lf\t%s" % \
                           (mscore, forest.bleu.fscore(), forest.bleu.ratio(), fv)
                     print >> logs, hyp
 
-                    #for MERT output
-                    #print >> logs, "<score>%.3lf</score>" % mscore
-                    #print >> logs, "<hyp>%s</hyp>" % hyp
-                    #print >> logs, "<cost>%s</cost>" % fv
-                
                     myoraclebleus += forest.bleu.copy()
                     myscores += mscore
 
                 # for MERT output
-                print >> logs, "</sent>"
+                if FLAGS.mert:
+                    print >> logs, "</sent>"
                 
-#                 if FLAGS.compute_fear:
-#                     bleu, hyp, fv, edgelist = forest.compute_oracle(weights, 1, -1)
-#                     bleu = forest.bleu.rescore(hyp)
-#                     mscore = weights.dot(fv)
-#                     print  >> logs, "   fear\tscore=%.4lf\tbleu+1=%.4lf\tlenratio=%.2lf\n%s" % \
-#                                 (mscore, forest.bleu.fscore(), forest.bleu.ratio(), hyp)
-                
-#                     myfearbleus += forest.bleu.copy()
-#                     myfearscores += mscore
-
             else:
                 if FLAGS.k is None:
                     FLAGS.k = 100000 ## inf
                 for res in forest.iterkbest(FLAGS.k, threshold=FLAGS.threshold):
                     print >> logs,  "%.4lf\n%s" % (forest.adjust_output(res)[:2])
 
-            if i % 10 == 9:
-                print >> logs,  "overall 1-best deriv bleu = %.4lf (%.2lf) score = %.4lf" \
-                            % (onebestbleus.score_ratio() + (onebestscores/(i+1),))
-#                 if FLAGS.recover_oracle:
-#                     print >> logs,  "overall david oracle bleu = %.4lf (%.2lf) score = %.4lf" \
-#                                 % (davidoraclebleus.score_ratio() + (davidscores/(i+1),))
-                if FLAGS.oracle:
-                    print >> logs,  "overall my    oracle bleu = %.4lf (%.2lf) score = %.4lf" \
-                            % (myoraclebleus.score_ratio() + (myscores/(i+1),))
-
-#                 if FLAGS.compute_oracle:
-#                     print >> logs,  "overall my      fear bleu = %.4lf (%.2lf) score = %.4lf" \
-#                           % (myfearbleus.score_ratio() + (myfearscores/(i+1),))
+            if i % 10 == 0:
+                output_avg_stats()
+                
         else:
             # convert pforest to tforest by pattern matching 
             stime = time.time()
@@ -637,14 +626,11 @@ if __name__ == "__main__":
             etime = time.time()
             print >> logs, "sent: %s, len: %d, nodes: %d, edges: %d, \tconvert time: %.2lf" % \
                   (forest.tag, len(forest), forest.size()[0], forest.size()[1], etime - stime)
-            allctime += (etime - stime)
+            totalconvtime += (etime - stime)
             
-        if FLAGS.first is not None:
-            if i+1 >= int(FLAGS.first):
-                break
 
     if FLAGS.ruleset:
-        print >> logs, "Total converting time: %.2lf" % allctime
+        print >> logs, "Total converting time: %.2lf" % totalconvtime
     
     # dump filtered rule set
     if FLAGS.rulefilter:
@@ -652,3 +638,6 @@ if __name__ == "__main__":
         for (lhs, rules) in filtered_ruleset.iteritems():
             for rule in rules:
                 print >> logs, "%s" % rule
+
+    if FLAGS.trans:  # translation forest
+        output_avg_stats()

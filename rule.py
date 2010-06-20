@@ -12,12 +12,15 @@ from utility import quoteattr
 
 class Rule(object):
 
-    __slots__ = "lhs", "rhs", "fields", "ruleid"
+    __slots__ = "lhs", "rhs", "fields", "ruleid", "_tree_size"
 
     def __init__(self, lhs, rhs, fields):
         self.lhs = lhs
         self.rhs = rhs
-        self.fields = fields        
+        self.fields = fields
+        # TODO: -LRB--
+        self._tree_size = self.lhs.count("(") - self.lhs.count("\"(") # LRB
+
 
     @staticmethod
     def parse(line):
@@ -51,8 +54,7 @@ class Rule(object):
 
     def tree_size(self):
         '''number of non-variable nodes in lhs tree'''
-        # TODO: -LRB--
-        return self.lhs.count("(") - self.lhs.count("\"(") # LRB
+        return self._tree_size
 
     def is_bp(self):
         '''am i bilingual phrase rule?'''

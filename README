@@ -2,6 +2,15 @@ lmsearch:
 
 cat dev501.tforests.nobp.p0.5 | ./lmsearch.py --lm dev501.tforests.p0.5.lm -w config_2_24.ini.lm -b50
 
+RESULTS:
+
+dev (616 sentences)
+
+nobp mincount = 2  config_2_24 (tuned with lenght bug)
+
+1-best  bleu 20.3 (0.98)  1-best 0.002 secs  forest loading 0.01 secs
+
+
 TODOs:
 
 -1) Rule class									done by HM
