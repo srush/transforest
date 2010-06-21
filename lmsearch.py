@@ -53,7 +53,8 @@ class Decoder(object):
         i = 0
         while i <= self.max_step:
 
-            curr_beam = sorted(beams[i].keys())[:b]  # beam pruning
+            # N.B.: values, not keys! (keys may not be updated)
+            curr_beam = sorted(beams[i].values())[:b]  # beam pruning
             self.num_states += len(curr_beam)
             
             if FLAGS.debuglevel >= 1:

@@ -29,6 +29,7 @@ flags.DEFINE_boolean("nist_tokenize", True, "nist tokenize")
 flags.DEFINE_boolean("clip_len", False, "clip length")
 flags.DEFINE_string("eff_ref_len", "closest", "effective length ratio: closest, average, shortest", short_name="len")    
 flags.DEFINE_boolean("latin", False, "remove non-latin_1 chars")
+flags.DEFINE_boolean("debug_cook", False, "output cooked test")
 
 logs = sys.stderr
 
@@ -40,6 +41,7 @@ normalize1 = [
 ]
 normalize1 = [(re.compile(pattern), replace) for (pattern, replace) in normalize1]
 
+# { | } ~      [ \ ] ^ _ `   (sp) ! " # $ % &    ( ) * +    : ; < = > ? @  /
 normalize2 = [
     (r'([\{-\~\[-\` -\&\(-\+\:-\@\/])',r' \1 '), # tokenize punctuation. apostrophe is missing
     (r'([^0-9])([\.,])',r'\1 \2 '),              # tokenize period and comma unless preceded by a digit
@@ -64,7 +66,7 @@ def normalize(s):
         s = re.sub(pattern, replace, s)
     return s.split()
 
-def precook(s, n=4):
+def precook(s, n=4, out=False):
     """Takes a string as input and returns an object that can be given to
     either cook_refs or cook_test. This is optional: cook_refs and cook_test
     can take string arguments as well."""
@@ -111,7 +113,7 @@ def cook_test(test, (reflen, refmaxcounts), eff=None, n=4):
     '''Takes a test sentence and returns an object that
     encapsulates everything that BLEU needs to know about it.'''
 
-    testlen, counts = precook(test, n)
+    testlen, counts = precook(test, n, True)
 
     result = {}
 
@@ -195,7 +197,8 @@ class Bleu(object):
         if refs is not None:
             self.crefs.append(cook_refs(refs))
             if test is not None:
-                self.ctest.append(cook_test(test, self.crefs[-1])) ## N.B.: -1
+                cooked_test = cook_test(test, self.crefs[-1])
+                self.ctest.append(cooked_test) ## N.B.: -1
             else:
                 self.ctest.append(None) # lens of crefs and ctest have to match
 

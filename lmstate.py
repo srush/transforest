@@ -162,7 +162,7 @@ class LMState(object):
 
     def trans(self):
         '''recover translation from lmstr'''
-        return LMState.lm.ppqstr(self._trans[LMState.lm.order-1:-1])
+        return LMState.lm.ppqstr(self._trans[LMState.lm.order-1:-LMState.lm.order+1])
 
     def __str__(self):
         return "LMState step=%d, score=%.2lf, trans=%s, stack=[%s]" % \

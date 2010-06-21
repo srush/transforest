@@ -131,4 +131,4 @@ class Ngram(object):
 
     def raw_stopsyms(self):
         ''' </s> '''
-        return ["</s>"]
+        return ["</s>"] * (self.order - 1) # not single <s>, so that DP can stop at unique state
