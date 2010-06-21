@@ -35,9 +35,6 @@ class Decoder(object):
             if FLAGS.debuglevel >= 2:
                 print >> logs, "adding to beam %d: %s" % (new.step, new)
 
-            if new.is_final():
-                self.final_items.append(new)
-        
     def beam_search(self, forest, b=1):
 
         self.num_states = self.num_edges = 0
@@ -65,6 +62,9 @@ class Decoder(object):
                 print >> logs
                 
             for old in curr_beam:
+                if old.is_final():
+                    self.final_items.append(old)        
+
                 if not old.is_final():
                     for new in old.predict():
                         self.add_state(new)
@@ -77,7 +77,7 @@ class Decoder(object):
 
         self.final_items.sort()
         
-        return self.final_items[0], self.final_items
+        return self.final_items[0], self.final_items[:b]
 
 ### main ###
 
