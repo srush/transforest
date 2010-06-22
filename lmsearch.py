@@ -28,10 +28,14 @@ class Decoder(object):
             self.max_step = new.step
 
         self.num_edges += 1
-        
-        if new not in beam or new < beam[new]: # safe
+
+        old = beam.get(new, None)
+        if old is None or new < old:
+            if old is not None: # in-beam
+                new.merge_with(old)
             
             beam[new] = new
+            
             if FLAGS.debuglevel >= 2:
                 print >> logs, "adding to beam %d: %s" % (new.step, new)
 
@@ -41,7 +45,7 @@ class Decoder(object):
         self.final_items = []
         self.best = None
         
-        beams = defaultdict(defaultdict) # +inf
+        beams = defaultdict(dict) # +inf
         self.beams = beams
         
         self.max_step = -1
@@ -97,12 +101,12 @@ def main():
     tot_len = tot_fnodes = tot_fedges = 0
     tot_steps = tot_states = tot_edges = 0
     
-    for i, forest in enumerate(Forest.load("-", transforest=True), 1):
+    for i, forest in enumerate(Forest.load("-", is_tforest=True), 1):
 
         t = time.time()
         
         best, final_items = decoder.beam_search(forest, b=FLAGS.beam)
-        score, trans, fv = best.score, best.trans(), best.fvector
+        score, trans, fv = best.score, best.trans(), best.get_fvector()
 
         t = time.time() - t
         tot_time += t
@@ -120,24 +124,42 @@ def main():
         tot_states += decoder.num_states
         tot_edges += decoder.num_edges
 
-        print >> logs, ("sent %d, b %d\tk %d\tscore %.4lf\tbleu+1 %s" + \
-              "\ttime %.3lf\tsentlen %-3d fnodes %-4d fedges %-5d\tstep %d  states %d  edges %d") % \
-              (i, FLAGS.beam, len(final_items), score, 
+        print >> logs, ("sent %d, b %d\tscore %.4f\tbleu+1 %s" + \
+              "\ttime %.3f\tsentlen %-3d fnodes %-4d fedges %-5d\tstep %d  states %d  edges %d") % \
+              (i, FLAGS.beam, score, 
                forest.bleu.score_ratio_str(), t, len(forest.sent), fnodes, fedges,
                decoder.max_step, decoder.num_states, decoder.num_edges)
+
+        if FLAGS.k > 1 or FLAGS.forest:
+           lmforest = best.toforest(forest)
+
+        if FLAGS.forest:
+            lmforest.dump()
+
+        if FLAGS.k > 1:
+           lmforest.lazykbest(FLAGS.k, weights=weights)
+           klist = lmforest.root.klist
+
+           if not FLAGS.mert:
+               for j, (sc, tr, fv) in enumerate(klist, 1):
+                   print >> logs, "k=%d score=%.4f fv=%s\n%s" % (j, sc, fv, tr)
+
+        else:
+            klist = [(best.score, best.trans(), best.get_fvector())]
         
         if FLAGS.mert: # <score>... <hyp> ...
             print >> logs, '<sent No="%d">' % i
             print >> logs, "<Chinese>%s</Chinese>" % " ".join(forest.cased_sent)
 
-            for item in final_items:
-                print >> logs, "<score>%.3lf</score>" % item.score
-                print >> logs, "<hyp>%s</hyp>" % item.trans()
-                print >> logs, "<cost>%s</cost>" % item.fvector
+            for sc, tr, fv in klist:
+                print >> logs, "<score>%.3lf</score>" % sc
+                print >> logs, "<hyp>%s</hyp>" % tr
+                print >> logs, "<cost>%s</cost>" % fv
 
             print >> logs, "</sent>"
-            
-        print trans
+
+        if not FLAGS.forest:
+            print trans
 
     print >> logs, ("avg %d sentences, b %d\tscore %.4lf\tbleu %s\ttime %.3f" + \
           "\tsentlen %.1f fnodes %.1f fedges %.1f\tstep %.1f states %.1f edges %.1f") % \
@@ -155,6 +177,8 @@ if __name__ == "__main__":
     flags.DEFINE_integer("debuglevel", 0, "debug level")
     flags.DEFINE_boolean("mert", True, "output mert-friendly info (<hyp><cost>)")
     flags.DEFINE_boolean("profile", False, "profiling")
+    flags.DEFINE_integer("kbest", 1, "kbest output", short_name="k")
+    flags.DEFINE_boolean("forest", False, "dump +LM forest")
 
     argv = FLAGS(sys.argv)
 

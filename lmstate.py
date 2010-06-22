@@ -5,10 +5,12 @@ from node_and_hyperedge import Hyperedge, Node
 from svector import Vector
 from rule import Rule
 
+from forest import Forest
+
 import gflags as flags
 FLAGS=flags.FLAGS
 
-flags.DEFINE_boolean("dp", False, "dynamic programming")    
+flags.DEFINE_boolean("dp", True, "dynamic programming")    
 flags.DEFINE_boolean("complete", False, "use complete step")    
 
 class DottedRule(object):
@@ -58,8 +60,9 @@ class DottedRule(object):
 class LMState(object):
 
     ''' stack is a list of dotted rules(hyperedges, dot_position) '''
-    
-    __slots__ = "stack", "_trans", "score", "step", "fvector", "_hash"
+
+    # backptrs = [((prev_state, ...), extra_fv, extra_words)]
+    __slots__ = "stack", "_trans", "score", "step", "_hash", "backptrs"
 
     weights = None
     lm = None
@@ -75,20 +78,25 @@ class LMState(object):
 
     @staticmethod
     def start_state(root):
-        ''' None -> <s>^{g-1} . TOP </s> '''
+        ''' None -> <s>^{g-1} . TOP </s>^{g-1} '''
         lmstr = LMState.lm.raw_startsyms()
         lhsstr = lmstr + [root] + LMState.lm.raw_stopsyms()
         edge = Hyperedge(None, [root], Vector(), lhsstr)
         edge.rule = Rule.parse("ROOT(TOP) -> x0 ### ")        
-        return LMState([DottedRule(edge, dot=len(lmstr))], LMState.lm.startsyms(), 0, 0)
+        return LMState(None, [DottedRule(edge, dot=len(lmstr))], LMState.lm.startsyms())
 
-    def __init__(self, stack, trans, score=0, step=0, fvector=Vector()):
+    def __init__(self, prev_state, stack, trans, step=0, extra_fv=Vector()):
         self.stack = stack
         self._trans = trans
-        self.score = score
         self.step = step
-        self.fvector = fvector
-        self.scan()        
+
+        sc = 0 if prev_state is None else prev_state.score
+        # maintain delta_fv and cumulative score; but not cumul fv and delta score
+        self.backptrs = [((prev_state,), extra_fv, [])] # no extra_words yet
+        self.score = sc + extra_fv.dot(LMState.weights)
+        
+        self.scan()
+        
 
     def predict(self):
         if not self.end_of_rule():
@@ -96,11 +104,11 @@ class LMState(object):
             if type(next_symbol) is Node:
                 for edge in next_symbol.edges:
                     # N.B.: copy trans
-                    yield LMState(self.stack + [DottedRule(edge)], 
+                    yield LMState(self,
+                                  self.stack + [DottedRule(edge)], 
                                   self._trans[:], 
-                                  self.score + edge.fvector.dot(LMState.weights),
                                   self.step + edge.rule.tree_size(),
-                                  self.fvector + edge.fvector)
+                                  extra_fv = Vector() + edge.fvector) # N.B.: copy! + is faster
 
     def lmstr(self):
         # TODO: cache real lmstr
@@ -118,8 +126,11 @@ class LMState(object):
                     self.stack[-1].advance() # dot ++
                     #TODO fix ngram
                     lmscore = LMState.lm.ngram.wordprob(this, self.lmstr())
+
                     self.score += lmscore * LMState.weights.lm_weight
-                    self.fvector["lm"] += lmscore
+                    _, extra_fv, extra_words = self.backptrs[0]
+                    extra_fv["lm"] += lmscore
+                    extra_words += [this,]
                     self._trans += [this,]
                 else:
                     break
@@ -138,11 +149,10 @@ class LMState(object):
     def complete(self):
         if self.end_of_rule():
             # N.B.: copy trans
-            yield LMState(self.stack[:-2] + [self.stack[-2].advanced()], 
+            yield LMState(self,
+                          self.stack[:-2] + [self.stack[-2].advanced()], 
                           self._trans[:],
-                          self.score, 
-                          self.step + self.stack[-1].tree_size(),
-                          Vector(self.fvector)) # copy.copy is slow
+                          self.step + self.stack[-1].tree_size()) # no additional cost/fv
 
     def rehash(self):
         self._hash = hash(tuple(self.stack) + tuple(self.lmstr()))# + (self.score, self.step))
@@ -160,13 +170,66 @@ class LMState(object):
         # TOP' -> <s> TOP </s> . (dot at the end)
         return len(self.stack) == 1 and self.stack[0].end_of_rule()
 
-    def trans(self):
+    def trans(self, external=True):
         '''recover translation from lmstr'''
-        return LMState.lm.ppqstr(self._trans[LMState.lm.order-1:-LMState.lm.order+1])
-
+        if external:
+            return LMState.lm.ppqstr(self._trans[LMState.lm.order-1 : -LMState.lm.order+1])
+        else:
+            return LMState.lm.ppqstr(self._trans[LMState.lm.order-1 : ])
+           
     def __str__(self):
-        return "LMState step=%d, score=%.2lf, trans=%s, stack=[%s]" % \
-               (self.step, self.score, self.trans(), ", ".join("(%s)" % x for x in self.stack))
+        return "LMState step=%d, score=%.2lf, trans=\"%s\", stack=[%s]" % \
+               (self.step, self.score, self.trans(external=False), ", ".join("(%s)" % x for x in self.stack))
 
     def __hash__(self):
         return self._hash
+
+    def get_fvector(self):
+        '''recursively reconstruct'''
+
+        (prev_state,), extra_fv, _ = self.backptrs[0]
+        if prev_state is None:
+            return extra_fv
+        return prev_state.get_fvector() + extra_fv
+
+    def merge_with(self, old):
+        self.backptrs += old.backptrs
+
+    def _toforest(self, lmforest, sent, cache, level=0):
+        if self in cache:
+            return cache[self]
+
+        this_node = Node("", "X [0-0]", 1, Vector(), sent) # no node fv, temporary iden=""
+        is_root = level == 0 # don't include final </s> </s>
+        
+        for prev_states, extra_fv, extra_words  in self.backptrs:
+            prev_nodes = [p._toforest(lmforest, sent, cache, level+1) for p in prev_states if p is not None]
+
+            if is_root:
+                extra_words = extra_words[:-LMState.lm.order+1]
+                
+            edge = Hyperedge(this_node, prev_nodes, extra_fv,
+                             prev_nodes + LMState.lm.ppqstr(extra_words).split()) # lhsstr
+
+            edge.rule = Rule("a(\"a\")", "b", "")
+            edge.rule.ruleid = 1
+
+            this_node.add_edge(edge)
+        
+        cache[self] = this_node
+        this_node.iden = str(len(cache)) # post-order id
+        lmforest.add_node(this_node)
+        if is_root:
+            lmforest.root = this_node
+        return this_node
+        
+    def toforest(self, forest):
+        '''generate a forest object (for kbest)'''
+
+        cache = {}
+        lmforest = Forest(forest.sent, forest.cased_sent, is_tforest=True, tag=forest.tag)
+        lmforest.refs = forest.refs
+
+        self._toforest(lmforest, forest.sent, cache)
+
+        return lmforest

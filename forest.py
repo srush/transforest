@@ -51,6 +51,7 @@ cache_same = False
 base_weights = Vector("lm1=2 gt_prob=1 plhs=1 text-length=1")
 
 flags.DEFINE_integer("first", None, "first N forests only")
+flags.DEFINE_string("ruleset", None, "translation rule set (parse => trans)", short_name="r")
 
 class Forest(object):
     ''' a collection of nodes '''
@@ -85,15 +86,14 @@ class Forest(object):
         self.nodes = newnodes
         self.nodeorder = newnodeorder
         
-    def __init__(self, num, sentence, cased_sent, transforest, tag=""):
+    def __init__(self, sent, cased_sent, is_tforest=False, tag=""):
         self.tag = tag
-        self.num = num
         self.nodes = {}  ## id: node
         self.nodeorder = [] #node
 
-        self.transforest = transforest
+        self._tforest = is_tforest
         
-        self.sent = sentence
+        self.sent = sent
         # a backup of cased, word-based sentence, since sent itself is going to be lowercased and char-based.
         self.cased_sent = cased_sent
         self.len = len(self.sent)
@@ -190,7 +190,7 @@ class Forest(object):
         return onebest - basetime, kbest - basetime
                 
     @staticmethod
-    def load(filename, transforest=False, lower=False, sentid=0, first=None):
+    def load(filename, is_tforest=False, lower=False, sentid=0, first=None):
         '''now returns a generator! use load().next() for singleton.
            and read the last line as the gold tree -- TODO: optional!
            and there is an empty line at the end
@@ -245,7 +245,7 @@ class Forest(object):
             ## sizes: number of nodes, number of edges (optional)
             num, nedges = map(int, file.readline().split("\t"))   
 
-            forest = Forest(num, sent, cased_sent, tag, transforest)
+            forest = Forest(sent, cased_sent, tag, is_tforest)
 
             forest.tag = tag
 
@@ -379,11 +379,8 @@ class Forest(object):
               % (num_sents, total_time, total_time/(num_sents+0.001))
 
     @staticmethod
-    def loadall(filename, transforest=False):
-        forests = []
-        for forest in Forest.load(filename, transforest):
-            forests.append(forest)
-        return forests
+    def loadall(filename, is_tforest=False):
+        return list(Forest.load(filename, is_tforest))
 
     def subtree(self):
         for node in self:
@@ -409,6 +406,7 @@ class Forest(object):
             print >> out, ref
         
         print >> out, "%d\t%d" % self.size()  # nums of nodes and edges
+        rulecache = set()
         for node in self:
 
             oracle_edge = node.oracle_edge if hasattr(node, "oracle_edge") else None
@@ -421,7 +419,6 @@ class Forest(object):
                 
             ##print >> out, "||| %.4lf" % node.merit if print_merit else ""
 
-            rulecache = set()
             for edge in node.edges:
 
                 is_oracle = "*" if (edge is oracle_edge) else ""
@@ -439,8 +436,13 @@ class Forest(object):
                     rulecache.add(edge.ruleid)
                 wordnum = sum([1 if type(x) is str else 0 for x in edge.lhsstr])
                 tailstr = " ".join(['"%s"' % x if type(x) is str else x.iden for x in edge.lhsstr])
-                print >> out, "\t%s%s ||| %s ||| %s rule-num=1 text-length=%d" \
-                            % (is_oracle, tailstr, rule_print, edge.fvector, wordnum)
+
+                if FLAGS.ruleset: # convert forest
+                    edge.fvector["rule-num"] = 1
+                    edge.fvector["text-length"] = wordnum
+                    
+                print >> out, "\t%s%s ||| %s ||| %s" \
+                            % (is_oracle, tailstr, rule_print, edge.fvector)
                      
         print >> out  ## last blank line
 
@@ -498,7 +500,6 @@ def output_avg_stats():
 if __name__ == "__main__":
 
     flags.DEFINE_boolean("trans", False, "translation forest instead of parse forest", short_name="t")
-    flags.DEFINE_string("ruleset", None, "translation rule set (parse => trans)", short_name="r")
     flags.DEFINE_string("phrase", None, "bilingual phrase from Moses")
     flags.DEFINE_boolean("oracle", False, "compute oracles")
     flags.DEFINE_integer("kbest", 1, "kbest", short_name="k")
@@ -537,7 +538,7 @@ if __name__ == "__main__":
     totalkbesttime = 0
     totaloracletime = 0
     
-    for i, forest in enumerate(Forest.load("-", transforest=FLAGS.trans), 1):
+    for i, forest in enumerate(Forest.load("-", is_tforest=FLAGS.trans), 1):
  
         if FLAGS.trans:  # translation forest
             if not FLAGS.infinite:
