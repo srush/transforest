@@ -13,6 +13,7 @@ FLAGS=flags.FLAGS
 
 from lmstate import LMState
 from bleu import Bleu
+from svector import Vector
 
 class Decoder(object):
 
@@ -43,7 +44,7 @@ class Decoder(object):
     def beam_search(self, forest, b=1):
 
         if FLAGS.futurecost:
-            forest.bestparse(LMState.weights) # node.bestres[0] -- tm-only 1-best score
+            forest.bestparse(LMState.weights + Vector("lm1=%s" % (LMState.weights["lm"] * FLAGS.lmratio))) 
             sc, tr, fv = forest.root.bestres
             forest.bleu.rescore(tr)
             print >> logs, "1-best score: %.3f, bleu: %s" % (sc, forest.bleu.score_ratio_str())

@@ -61,7 +61,7 @@ def prune(forest, gap=None, ratio=None):
     def check_subs(edge, threshold):
         ''' check if every tail falls in the beam. '''
         for sub in edge.subs:
-            if hasattr(sub, "unreachable") or sub.merit > threshold:
+            if not hasattr(sub, "survived"): #hasattr(sub, "unreachable") or sub.merit > threshold:
                 return False
         return True
 
@@ -83,6 +83,7 @@ def prune(forest, gap=None, ratio=None):
     for node in forest: # N.B.: in Forest.__iter__: nodeorder
         iden = node.iden
         if not hasattr(node, "unreachable") and node.merit <= threshold:  ## node pruning
+            node.survived = True
             newnodes[iden] = node
             neworder.append(node)
             node.edges = [e for e in node.edges if (e.merit <= threshold and check_subs(e, threshold))] 
