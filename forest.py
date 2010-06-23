@@ -327,7 +327,7 @@ class Forest(object):
 
                     fvector = Vector(fields)
                     if lm is not None:
-                        fvector["lm"] = lmscore # hack
+                        fvector["lm1"] = lmscore # hack
 
                     edge = Hyperedge(node, tailnodes, fvector, lhsstr)
                     edge.lmlhsstr = lmlhsstr
@@ -515,7 +515,7 @@ def output_avg_stats():
 if __name__ == "__main__":
 
     flags.DEFINE_string("ruleset", None, "translation rule set (parse => trans)", short_name="r")
-    flags.DEFINE_boolean("trans", False, "translation forest instead of parse forest", short_name="t")
+##    flags.DEFINE_boolean("trans", False, "translation forest instead of parse forest", short_name="t")
     flags.DEFINE_string("phrase", None, "bilingual phrase from Moses")
     flags.DEFINE_boolean("oracle", False, "compute oracles")
     flags.DEFINE_integer("kbest", 1, "kbest", short_name="k")
@@ -532,11 +532,12 @@ if __name__ == "__main__":
 
     weights = Model.cmdline_model()
     lm = Ngram.cmdline_ngram() # if FLAGS.lm is None then returns None
-    weights["lm"] *= FLAGS.lmratio
-    
+    if lm:
+        weights["lm1"] = weights["lm"] * FLAGS.lmratio
+
     reffiles = [open(f) for f in argv[1:]]
 
-    convert_forest = FLAGS.ruleset
+    convert_forest = (FLAGS.ruleset is not None)
   
     if FLAGS.ruleset is not None:
         ruleset = RuleSet(FLAGS.ruleset)
@@ -561,9 +562,9 @@ if __name__ == "__main__":
     totalkbesttime = 0
     totaloracletime = 0
     
-    for i, forest in enumerate(Forest.load("-", is_tforest=FLAGS.trans, lm=lm), 1):
+    for i, forest in enumerate(Forest.load("-", is_tforest=(not convert_forest), lm=lm), 1):
  
-        if FLAGS.trans:  # translation forest
+        if not convert_forest:  # translation forest
             if not FLAGS.infinite:
                 if FLAGS.k is None:
                     FLAGS.k = 1
@@ -639,7 +640,7 @@ if __name__ == "__main__":
             # default fields
             deffields = "gt_prob=-50 proot=-50 prhs=-20 plhs=-20 lexpef=-10 lexpfe=-10 count1=0 count2_3=0 count4=0 prhs_var=-20 plhs_var=-20 ghkm_num=0 bp_num=0 def_num=1"
             # inside replace
-            pm = PatternMatching(forest, ruleset, \
+            pm = PatternMatching(forest, ruleset, 
                                  filtered_ruleset, deffields,
                                  FLAGS.rulefilter)
             forest = pm.convert()
@@ -663,5 +664,5 @@ if __name__ == "__main__":
             for rule in rules:
                 print >> logs, "%s" % rule
 
-    if FLAGS.trans:  # translation forest
+    if not convert_forest:  # translation forest
         output_avg_stats()

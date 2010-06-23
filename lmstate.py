@@ -23,7 +23,7 @@ class DottedRule(object):
         self.rehash()
 
     def rehash(self):
-        self._hash = hash((self.edge, self.dot))
+        self._hash = self.edge._hash + self.dot
 
     def tree_size(self):
         return self.edge.rule.tree_size() # number of non-variable nodes in the lhs tree
@@ -39,9 +39,9 @@ class DottedRule(object):
 
     def next_symbol(self):
         try:
-            return self.edge.lhsstr[self.dot] # Node or str
+            return self.edge.lmlhsstr[self.dot] # Node or str
         except:
-            print self.edge.lhsstr, self.dot
+            print self.edge.lmlhsstr, self.dot
             assert False
 
     def end_of_rule(self):
@@ -67,6 +67,9 @@ class LMState(object):
     weights = None
     lm = None
     dp = False
+    lmcache = {}
+    cachehits = 0
+    cachemiss = 0
 
     @staticmethod
     def init(lm, weights, dp=None):
@@ -79,9 +82,14 @@ class LMState(object):
     @staticmethod
     def start_state(root):
         ''' None -> <s>^{g-1} . TOP </s>^{g-1} '''
+
+##        LMState.cache = {}
+
         lmstr = LMState.lm.raw_startsyms()
         lhsstr = lmstr + [root] + LMState.lm.raw_stopsyms()
+        
         edge = Hyperedge(None, [root], Vector(), lhsstr)
+        edge.lmlhsstr = LMState.lm.startsyms() + [root] + LMState.lm.stopsyms()
         edge.rule = Rule.parse("ROOT(TOP) -> x0 ### ")
         sc = root.bestres[0] if FLAGS.futurecost else 0
         return LMState(None, [DottedRule(edge, dot=len(lmstr))], LMState.lm.startsyms(),
@@ -130,9 +138,9 @@ class LMState(object):
             # scan
             if not self.end_of_rule():                
                 symbol = self.next_symbol()
-                if type(symbol) is str:
+                if type(symbol) is int:
                     # TODO: cache lm index
-                    this = LMState.lm.word2index(symbol)
+                    this = symbol # LMState.lm.word2index(symbol)
                     self.stack[-1].advance() # dot ++
                     #TODO fix ngram
                     lmscore = LMState.lm.ngram.wordprob(this, self.lmstr())
@@ -145,11 +153,8 @@ class LMState(object):
                 else:
                     break
             else:
-                if FLAGS.complete:
-                    break
-                else: # pop stack
-                    self.step += self.stack[-1].tree_size()
-                    self.stack = self.stack[:-2] + [self.stack[-2].advanced()]
+                self.step += self.stack[-1].tree_size()
+                self.stack = self.stack[:-2] + [self.stack[-2].advanced()]
 
         self.rehash()
 
@@ -189,8 +194,9 @@ class LMState(object):
             return LMState.lm.ppqstr(self._trans[LMState.lm.order-1 : ])
            
     def __str__(self):
-        return "LMState step=%d, score=%.2lf, trans=\"%s\", stack=[%s]" % \
-               (self.step, self.score, self.trans(external=False), ", ".join("(%s)" % x for x in self.stack))
+        return "LMState step=%d, score=%.2lf, trans=\"%s\", stack=[%s], lm=%.2f" % \
+               (self.step, self.score, self.trans(external=False), ", ".join("(%s)" % x for x in self.stack),
+                self.backptrs[0][1]["lm"])
 
     def __hash__(self):
         return self._hash
@@ -220,7 +226,7 @@ class LMState(object):
                 extra_words = extra_words[:-LMState.lm.order+1]
                 
             edge = Hyperedge(this_node, prev_nodes, extra_fv,
-                             prev_nodes + LMState.lm.ppqstr(extra_words).split()) # lhsstr
+                             prev_nodes + LMState.ppqstr(extra_words))
 
             edge.rule = Rule("a(\"a\")", "b", "")
             edge.rule.ruleid = 1

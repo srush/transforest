@@ -82,6 +82,11 @@ class Node(Tree):
         # surface string
         self.surface = '%s' % ''.join(sent[self.span[0]:self.span[1]])
 
+        self._hash = hash(self.iden)
+
+    def __hash__(self):
+        return self._hash
+
     def psubtree(self):
         if self.subtree != '':
             return self.subtree
@@ -368,6 +373,7 @@ class Hyperedge(object):
         # like ["thank", node_5, "very", "much"]
         self.lhsstr = lhsstr
         #self.rhsstr = rhsstr
+        self._hash = hash((head, ) + tuple(lhsstr))
 
     def arity(self):
         return len(self.subs)
@@ -449,3 +455,6 @@ class Hyperedge(object):
                 if sub.is_terminal():
                     fv += sub.fvector
         return fv
+
+    def __hash__(self):
+        return self._hash

@@ -109,7 +109,7 @@ def main():
     tot_time = 0.
     tot_len = tot_fnodes = tot_fedges = 0
     tot_steps = tot_states = tot_edges = 0
-    
+
     for i, forest in enumerate(Forest.load("-", is_tforest=True, lm=lm), 1):
 
         t = time.time()
@@ -179,6 +179,8 @@ def main():
            tot_len/i, tot_fnodes/i, tot_fedges/i,
            tot_steps/i, tot_states/i, tot_edges/i)
 
+    print >> logs, LMState.cachehits, LMState.cachemiss
+
 if __name__ == "__main__":
 
     from ngram import Ngram
@@ -191,7 +193,7 @@ if __name__ == "__main__":
     flags.DEFINE_boolean("profile", False, "profiling")
     flags.DEFINE_integer("kbest", 1, "kbest output", short_name="k")
     flags.DEFINE_boolean("forest", False, "dump +LM forest")
-    flags.DEFINE_boolean("futurecost", True, "precompute future cost")
+    flags.DEFINE_boolean("futurecost", False, "precompute future cost")
 
     argv = FLAGS(sys.argv)
 
@@ -200,7 +202,7 @@ if __name__ == "__main__":
         profile.run('main()', '/tmp/a')
         import pstats
         p = pstats.Stats('/tmp/a')
-        p.sort_stats('time').print_stats(20)
+        p.sort_stats('time').print_stats(50)
 
     else:
         main()

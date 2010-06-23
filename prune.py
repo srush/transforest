@@ -135,15 +135,9 @@ if __name__ == "__main__":
         sys.exit(1)
 
     weights = Model.cmdline_model()
-<<<<<<< .mine
     lm = Ngram.cmdline_ngram() # if FLAGS.lm is None then returns None
-    weights["lm"] *= FLAGS.lmratio
-=======
-    lm = None
-    if FLAGS.lm:
-        lm = Ngram.cmdline_ngram()
-        weights["lm"] *= FLAGS.lmratio    
->>>>>>> .r67
+    if lm:
+        weights["lm1"] = weights["lm"] * FLAGS.lmratio
     
     onebestscores = 0
     onebestbleus = Bleu()

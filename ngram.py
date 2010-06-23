@@ -35,7 +35,7 @@ class Ngram(object):
         print >> logs, "lm loaded in %.2lf seconds" % (time.clock() - t0)
         self.pqcache = {}
 
-        self._stopsyms = [self.vocab.index("</s>")]
+        self._stopsyms = [self.vocab.index("</s>")] * (self.order - 1)
         self._startsyms = [self.vocab.index("<s>")] * (self.order - 1)
         
     def word_prob(self, s):
