@@ -529,6 +529,7 @@ if __name__ == "__main__":
     argv = FLAGS(sys.argv)
 
     weights = Model.cmdline_model()
+    lm = None
     if FLAGS.lm:
         lm = Ngram.cmdline_ngram()
         weights["lm"] *= FLAGS.lmratio    

@@ -7,7 +7,7 @@ use warnings;
 use strict;
 use utf8;
 use Encode;
-use XML::Twig;
+#use XML::Twig;
 
 binmode STDOUT, ":utf8";
 binmode STDERR, ":utf8";
