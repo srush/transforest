@@ -1,5 +1,9 @@
 lmsearch:
 
+b=100; i=composed/tst.tforest.com.count2.bp.myp0.3.r10; cat $i | ./lmsearch.py -w config50dp.ini --lm back_core.e.3.srilm -b$b --nomert --futurecost --lmratio 0.8 >$i.b$b.future0.8 2>$i.b$b.log.future0.8 &
+
+i=composed/dev.tforest.com.count2.bp.myp0.3.r10; cat $i | ./lmsearch.py -w config50dp.ini --lm back_core.e.3.srilm -b50 --nomert >$i.b50 2>$i.b50.log &
+
 cat dev501.tforests.nobp.p0.5 | ./lmsearch.py --lm dev501.tforests.p0.5.lm -w config_2_24.ini.lm -b50
 
 RESULTS:

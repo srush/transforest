@@ -226,7 +226,7 @@ class LMState(object):
                 extra_words = extra_words[:-LMState.lm.order+1]
                 
             edge = Hyperedge(this_node, prev_nodes, extra_fv,
-                             prev_nodes + LMState.ppqstr(extra_words))
+                             prev_nodes + LMState.lm.ppqstr(extra_words).split())
 
             edge.rule = Rule("a(\"a\")", "b", "")
             edge.rule.ruleid = 1
