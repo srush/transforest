@@ -35,6 +35,7 @@ def inside_outside(forest):
     forest.bestparse(weights) ## inside
     
     forest.root.alpha = 0
+    all_edges = [] # for sorting (outside)
 
     for node in forest.reverse():   ## top-down
         if not hasattr(node, "alpha"):
@@ -44,12 +45,17 @@ def inside_outside(forest):
 
             for edge in node.edges:
                 edge.merit = node.alpha + edge.beta
+
+                all_edges.append((edge.merit, edge)) # for sorting (outside)
+                
                 for sub in edge.subs:
                     score = edge.merit - sub.beta
                     if not hasattr(sub, "alpha") or score < sub.alpha:
                         sub.alpha = score
+
+    return all_edges
     
-def prune(forest, gap, delete=True, do_merits=True):
+def prune(forest, gap=None, ratio=None):
     ''' Known issue: not 100% correct w.r.t. floating point errors.'''
 
     def check_subs(edge, threshold):
@@ -61,17 +67,20 @@ def prune(forest, gap, delete=True, do_merits=True):
 
     start_time = time.time()
 
-    if do_merits:
-        inside_outside(forest)
-
+    all_edges = inside_outside(forest)
     oldsize = forest.size()
+
+    threshold = forest.root.merit + (gap if gap is not None else 1e+9)
+    if ratio is not None:
+        all_edges.sort()
+        allowed = int(len(forest.sent) * ratio) # allowed size
+        threshold = min(threshold, all_edges[min(allowed, len(all_edges)-1)][0])
     
-    threshold = forest.root.merit + gap    
     newnodes = {}
     neworder = []
 
     kleinedges = 0
-    for node in forest:
+    for node in forest: # N.B.: in Forest.__iter__: nodeorder
         iden = node.iden
         if not hasattr(node, "unreachable") and node.merit <= threshold:  ## node pruning
             newnodes[iden] = node
@@ -92,10 +101,13 @@ def prune(forest, gap, delete=True, do_merits=True):
     
     newsize = forest.size()
     
-    print >> logs, "%s gap %4.1lf, %4d nodes, %5d edges remained. prune ratio = %4.1lf%%, %4.1lf%% (%4.1lf%%)" \
-          % (forest.tag, gap, newsize[0], newsize[1], \
-             (oldsize[0] - newsize[0])*100.0 / oldsize[0], (oldsize[1] - newsize[1])*100.0 / oldsize[1],\
-             kleinedges*100.0/oldsize[1]),
+    print >> logs, "%s (len: %d), gap %s, %4d nodes, %5d edges remained. prune ratio = %.1f%%, %.1f%% (%.1f%%) edges/len: %.1f" \
+          % (forest.tag, len(forest.sent),
+             str(gap), newsize[0], newsize[1], 
+             (oldsize[0] - newsize[0])*100.0 / oldsize[0], (oldsize[1] - newsize[1])*100.0 / oldsize[1],
+             kleinedges*100.0/oldsize[1],
+             newsize[1]/len(forest.sent))    
+    
     print >> logs, "done in %.2lf secs" % (time.time() - start_time)
 
     global total_nodes, total_edges, old_nodes, old_edges
@@ -107,11 +119,8 @@ def prune(forest, gap, delete=True, do_merits=True):
 
 if __name__ == "__main__":
 
-#     optparser.add_option("-s", "--suffix", dest="suffix", help="dump suffix (1.suffix)", metavar="SUF")
-#     optparser.add_option("-S", "--start", dest="startid", help="dump start id", \
-#                          metavar="ID", type=int, default=1)
-
     flags.DEFINE_float("prob", None, "score threshold", short_name="p")
+    flags.DEFINE_float("ratio", None, "ratio of |hyperedges|/|sent|", short_name="r")
     flags.DEFINE_boolean("oracle", False, "compute oracle after pruning")
     flags.DEFINE_boolean("out", True, "output pruned forest (to stdout)")
     flags.DEFINE_string("suffix", None, "suffix for dumping (1.<suffix>)", short_name="s")
@@ -121,36 +130,48 @@ if __name__ == "__main__":
 
     argv = FLAGS(sys.argv)
 
-    if FLAGS.prob is None:
-        print >> logs, "Error: must specify pruning threshold by -p" + str(FLAGS)
+    if FLAGS.prob is None and FLAGS.ratio is None:
+        print >> logs, "Error: must specify pruning threshold by -p or ratio by -r" + str(FLAGS)
         sys.exit(1)
 
     weights = Model.cmdline_model()
+<<<<<<< .mine
+    lm = Ngram.cmdline_ngram() # if FLAGS.lm is None then returns None
+    weights["lm"] *= FLAGS.lmratio
+=======
     lm = None
     if FLAGS.lm:
         lm = Ngram.cmdline_ngram()
         weights["lm"] *= FLAGS.lmratio    
+>>>>>>> .r67
     
-    myoraclebleus = Bleu()
+    onebestscores = 0
+    onebestbleus = Bleu()
     myscores = 0
-
+    myoraclebleus = Bleu()    
+    
     total_nodes = total_edges = old_nodes = old_edges = 0
     
-    for i, forest in enumerate(Forest.load("-", lm=lm)):
+    for i, forest in enumerate(Forest.load("-", lm=lm), 1):
         if forest is None:
             print
             continue
         
-        if FLAGS.prob > 0: # TODO: 1-best in case gap = 0
-            prune(forest, FLAGS.prob)
+        prune(forest, FLAGS.prob, FLAGS.ratio)
+
+        score, hyp, fv = forest.root.bestres
+        
+        forest.bleu.rescore(hyp)
+        onebestscores += score
+        onebestbleus += forest.bleu.copy()
 
         if FLAGS.oracle: #new
             bleu, hyp, fv, edgelist = forest.compute_oracle(weights, 0, 1, store_oracle=True)
             ##print >> logs, forest.root.oracle_edge
             bleu = forest.bleu.rescore(hyp)
             mscore = weights.dot(fv)
-            print  >> logs, "moracle\tscore=%.4lf\tbleu+1=%.4lf\tlenratio=%.2lf\n%s" % \
-                  (mscore, forest.bleu.fscore(), forest.bleu.ratio(), hyp)
+            print  >> logs, "moracle\tscore=%.4lf\tbleu+1=%.4lf\tlenratio=%.2lf" % \
+                  (mscore, forest.bleu.fscore(), forest.bleu.ratio()) #, hyp) # don't output oracle
             
             myoraclebleus += forest.bleu.copy()
             myscores += mscore
@@ -161,13 +182,16 @@ if __name__ == "__main__":
             else:
                 forest.dump()
 
-        if i % 10 == 9:
+        if i % 10 == 0:
                 print >> logs, "%d forests pruned, avg new size: %.1lf %.1lf (survival ratio: %4.1lf%% %4.1lf%%)" % \
-                            (i+1, total_nodes / (i+1.), total_edges / (i+1.), \
-                             total_nodes * 100. / old_nodes, total_edges * 100. / old_edges)
+                            (i, total_nodes/i, total_edges/i, \
+                             total_nodes*100./old_nodes, total_edges*100./old_edges)
                 
+    print >> logs,  "overall 1-best oracle bleu = %s  score = %.4lf" \
+          % (onebestbleus.score_ratio_str(), onebestscores/i)
+    
     if FLAGS.oracle:
-        print >> logs,  "overall my    oracle bleu = %.4lf (%.2lf) score = %.4lf" \
-              % (myoraclebleus.score_ratio() + (myscores/(i+1),))
+        print >> logs,  "overall my     oracle bleu = %s  score = %.4lf" \
+              % (myoraclebleus.score_ratio_str(), myscores/i)
 
 

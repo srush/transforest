@@ -51,7 +51,7 @@ cache_same = False
 base_weights = Vector("lm1=2 gt_prob=1 plhs=1 text-length=1")
 
 flags.DEFINE_integer("first", None, "first N forests only")
-flags.DEFINE_string("ruleset", None, "translation rule set (parse => trans)", short_name="r")
+convert_forest = False 
 flags.DEFINE_float("lmratio", 1, "language model weight multiplier")
 
 class Forest(object):
@@ -385,8 +385,9 @@ class Forest(object):
 
         # better check here instead of zero-division exception
         if num_sents == 0:
-            print >> logs, "NO FORESTS FOUND!!! (empty input file?)"            
-            yield None # new: don't halt
+            print >> logs, "NO FORESTS FOUND!!! (empty input file?)"
+            sys.exit(1)            
+#            yield None # new: don't halt -- WHY?
         
         Forest.load_time = total_time
         print >> logs, "%d forests loaded in %.2lf secs (avg %.2lf per sent)" \
@@ -451,7 +452,7 @@ class Forest(object):
                 wordnum = sum([1 if type(x) is str else 0 for x in edge.lhsstr])
                 tailstr = " ".join(['"%s"' % x if type(x) is str else x.iden for x in edge.lhsstr])
 
-                if FLAGS.ruleset: # convert forest
+                if convert_forest: # convert forest
                     edge.fvector["rule-num"] = 1
                     edge.fvector["text-length"] = wordnum
                     
@@ -513,6 +514,7 @@ def output_avg_stats():
 
 if __name__ == "__main__":
 
+    flags.DEFINE_string("ruleset", None, "translation rule set (parse => trans)", short_name="r")
     flags.DEFINE_boolean("trans", False, "translation forest instead of parse forest", short_name="t")
     flags.DEFINE_string("phrase", None, "bilingual phrase from Moses")
     flags.DEFINE_boolean("oracle", False, "compute oracles")
@@ -529,13 +531,12 @@ if __name__ == "__main__":
     argv = FLAGS(sys.argv)
 
     weights = Model.cmdline_model()
-    lm = None
-    if FLAGS.lm:
-        lm = Ngram.cmdline_ngram()
-        weights["lm"] *= FLAGS.lmratio    
+    lm = Ngram.cmdline_ngram() # if FLAGS.lm is None then returns None
+    weights["lm"] *= FLAGS.lmratio
     
     reffiles = [open(f) for f in argv[1:]]
 
+    convert_forest = FLAGS.ruleset
   
     if FLAGS.ruleset is not None:
         ruleset = RuleSet(FLAGS.ruleset)

@@ -17,8 +17,9 @@ class Ngram(object):
     @staticmethod
     def cmdline_ngram():
         if FLAGS.lm is None:
-            print >> logs, "Error: must specify an LM file --lm" + str(FLAGS)
-            sys.exit(1)            
+            return None
+#             print >> logs, "Error: must specify an LM file --lm" + str(FLAGS)
+#             sys.exit(1)            
 
         return Ngram(order=FLAGS.order, lmfilename=FLAGS.lm)
     
