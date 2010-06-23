@@ -82,18 +82,19 @@ class LMState(object):
         lmstr = LMState.lm.raw_startsyms()
         lhsstr = lmstr + [root] + LMState.lm.raw_stopsyms()
         edge = Hyperedge(None, [root], Vector(), lhsstr)
-        edge.rule = Rule.parse("ROOT(TOP) -> x0 ### ")        
-        return LMState(None, [DottedRule(edge, dot=len(lmstr))], LMState.lm.startsyms())
+        edge.rule = Rule.parse("ROOT(TOP) -> x0 ### ")
+        sc = root.bestres[0] if FLAGS.futurecost else 0
+        return LMState(None, [DottedRule(edge, dot=len(lmstr))], LMState.lm.startsyms(),
+                       step=0, score=sc) # future cost
 
-    def __init__(self, prev_state, stack, trans, step=0, extra_fv=Vector()):
+    def __init__(self, prev_state, stack, trans, step=0, score=0, extra_fv=Vector()):
         self.stack = stack
         self._trans = trans
         self.step = step
+        self.score = score
 
-        sc = 0 if prev_state is None else prev_state.score
         # maintain delta_fv and cumulative score; but not cumul fv and delta score
         self.backptrs = [((prev_state,), extra_fv, [])] # no extra_words yet
-        self.score = sc + extra_fv.dot(LMState.weights)
         
         self.scan()
         
@@ -102,13 +103,22 @@ class LMState(object):
         if not self.end_of_rule():
             next_symbol = self.next_symbol()
             if type(next_symbol) is Node:
+                base = self.score - (next_symbol.bestedge.beta if FLAGS.futurecost else 0)
                 for edge in next_symbol.edges:
                     # N.B.: copy trans
+##                    score = self.score + edge.fvector.dot(LMState.weights),
+                    if FLAGS.futurecost:
+                        future = sum([sub.bestedge.beta for sub in edge.subs])
+                    else:
+                        future = 0
+                    score = base + future + edge.fvector.dot(LMState.weights)
+
                     yield LMState(self,
                                   self.stack + [DottedRule(edge)], 
                                   self._trans[:], 
                                   self.step + edge.rule.tree_size(),
-                                  extra_fv = Vector() + edge.fvector) # N.B.: copy! + is faster
+                                  score,
+                                  extra_fv=Vector()+edge.fvector) # N.B.: copy! + is faster
 
     def lmstr(self):
         # TODO: cache real lmstr
@@ -152,7 +162,8 @@ class LMState(object):
             yield LMState(self,
                           self.stack[:-2] + [self.stack[-2].advanced()], 
                           self._trans[:],
-                          self.step + self.stack[-1].tree_size()) # no additional cost/fv
+                          self.step + self.stack[-1].tree_size(),
+                          self.score) # no additional cost/fv
 
     def rehash(self):
         self._hash = hash(tuple(self.stack) + tuple(self.lmstr()))# + (self.score, self.step))

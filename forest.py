@@ -52,6 +52,7 @@ base_weights = Vector("lm1=2 gt_prob=1 plhs=1 text-length=1")
 
 flags.DEFINE_integer("first", None, "first N forests only")
 flags.DEFINE_string("ruleset", None, "translation rule set (parse => trans)", short_name="r")
+flags.DEFINE_float("lmratio", 1, "language model weight multiplier")
 
 class Forest(object):
     ''' a collection of nodes '''
@@ -190,7 +191,7 @@ class Forest(object):
         return onebest - basetime, kbest - basetime
                 
     @staticmethod
-    def load(filename, is_tforest=False, lower=False, sentid=0, first=None):
+    def load(filename, is_tforest=False, lower=False, sentid=0, first=None, lm=None):
         '''now returns a generator! use load().next() for singleton.
            and read the last line as the gold tree -- TODO: optional!
            and there is an empty line at the end
@@ -297,26 +298,39 @@ class Forest(object):
                     tailnodes = []
                     lhsstr = [] # 123 "thank" 456
 
+                    lmstr = []
+                    lmscore = 0
+                    lmlhsstr = []
+                    
                     for x in tails:
                         if x[0]=='"': # word
-                            lhsstr.append(desymbol(x[1:-1]))  ## desymbol here and only here; ump will call quoteattr
+                            word = desymbol(x[1:-1])
+                            lhsstr.append(word)  ## desymbol here and only here; ump will call quoteattr
+                            
+                            if lm is not None:
+                                this = lm.word2index(word)
+                                lmscore += lm.ngram.wordprob(this, lmstr)
+                                lmlhsstr.append(this)
+                                lmstr += [this,]
+                                
                         else: # variable
 
                             assert x in forest.nodes, "BAD TOPOL ORDER: node #%s is referred to " % x + \
                                          "(in a hyperedge of node #%s) before being defined" % iden
                             tail = forest.nodes[x]
                             tailnodes.append(tail)
-                            lhsstr.append(tail)
+                            lhsstr.append(tail)                            
 
-##                    use_same = False
-##                    if fields[-1] == "~":
-##                        use_same = True
-##                        fields = fields[:-1]
-                        
-                    fvector = Vector(fields) #
-##                    remove_blacklist(fvector)
+                            if lm is not None:
+                                lmstr = []  # "..." "..." x0 "..."
+                                lmlhsstr.append(tail) # sync with lhsstr
+
+                    fvector = Vector(fields)
+                    if lm is not None:
+                        fvector["lm"] = lmscore # hack
 
                     edge = Hyperedge(node, tailnodes, fvector, lhsstr)
+                    edge.lmlhsstr = lmlhsstr
 
                     ## new
                     x = rule.split()
@@ -508,12 +522,19 @@ if __name__ == "__main__":
     flags.DEFINE_float("threshold", None, "threshold/margin")
     flags.DEFINE_boolean("rulefilter", False, "dump filtered ruleset")    
     flags.DEFINE_float("hope", 0, "hope weight")
-    flags.DEFINE_boolean("mert", True, "output mert-friendly info (<hyp><cost)")    
+    flags.DEFINE_boolean("mert", True, "output mert-friendly info (<hyp><cost)")
+
+    from ngram import Ngram # defines --lm and --order    
 
     argv = FLAGS(sys.argv)
-    reffiles = [open(f) for f in argv[1:]]
 
     weights = Model.cmdline_model()
+    if FLAGS.lm:
+        lm = Ngram.cmdline_ngram()
+        weights["lm"] *= FLAGS.lmratio    
+    
+    reffiles = [open(f) for f in argv[1:]]
+
   
     if FLAGS.ruleset is not None:
         ruleset = RuleSet(FLAGS.ruleset)
@@ -538,7 +559,7 @@ if __name__ == "__main__":
     totalkbesttime = 0
     totaloracletime = 0
     
-    for i, forest in enumerate(Forest.load("-", is_tforest=FLAGS.trans), 1):
+    for i, forest in enumerate(Forest.load("-", is_tforest=FLAGS.trans, lm=lm), 1):
  
         if FLAGS.trans:  # translation forest
             if not FLAGS.infinite:

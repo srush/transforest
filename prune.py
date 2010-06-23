@@ -117,6 +117,8 @@ if __name__ == "__main__":
     flags.DEFINE_string("suffix", None, "suffix for dumping (1.<suffix>)", short_name="s")
     flags.DEFINE_integer("startid", 1, "start id for dumping")
 
+    from ngram import Ngram # defines --lm and --order    
+
     argv = FLAGS(sys.argv)
 
     if FLAGS.prob is None:
@@ -124,13 +126,16 @@ if __name__ == "__main__":
         sys.exit(1)
 
     weights = Model.cmdline_model()
+    if FLAGS.lm:
+        lm = Ngram.cmdline_ngram()
+        weights["lm"] *= FLAGS.lmratio    
 
     myoraclebleus = Bleu()
     myscores = 0
 
     total_nodes = total_edges = old_nodes = old_edges = 0
     
-    for i, forest in enumerate(Forest.load("-")):
+    for i, forest in enumerate(Forest.load("-", lm=lm)):
         if forest is None:
             print
             continue

@@ -17,7 +17,8 @@ from bleu import Bleu
 class Decoder(object):
 
     def __init__(self):
-        pass
+        self.firstpassscore = 0
+        self.firstpassbleus = Bleu()
     
     def add_state(self, new):
         ''' adding a new state to the appropriate beam, and checking finality. '''
@@ -40,6 +41,14 @@ class Decoder(object):
                 print >> logs, "adding to beam %d: %s" % (new.step, new)
 
     def beam_search(self, forest, b=1):
+
+        if FLAGS.futurecost:
+            forest.bestparse(LMState.weights) # node.bestres[0] -- tm-only 1-best score
+            sc, tr, fv = forest.root.bestres
+            forest.bleu.rescore(tr)
+            print >> logs, "1-best score: %.3f, bleu: %s" % (sc, forest.bleu.score_ratio_str())
+            self.firstpassscore += sc
+            self.firstpassbleus += forest.bleu
 
         self.num_states = self.num_edges = 0
         self.final_items = []
@@ -101,7 +110,7 @@ def main():
     tot_len = tot_fnodes = tot_fedges = 0
     tot_steps = tot_states = tot_edges = 0
     
-    for i, forest in enumerate(Forest.load("-", is_tforest=True), 1):
+    for i, forest in enumerate(Forest.load("-", is_tforest=True, lm=lm), 1):
 
         t = time.time()
         
@@ -161,6 +170,9 @@ def main():
         if not FLAGS.forest:
             print trans
 
+    print >> logs, "avg %d sentences, first pass score: %.4f, bleu: %s" % \
+          (i, decoder.firstpassscore/i, decoder.firstpassbleus.score_ratio_str())
+                                                                            
     print >> logs, ("avg %d sentences, b %d\tscore %.4lf\tbleu %s\ttime %.3f" + \
           "\tsentlen %.1f fnodes %.1f fedges %.1f\tstep %.1f states %.1f edges %.1f") % \
           (i, FLAGS.beam, tot_score/i, tot_bleu.score_ratio_str(), tot_time/i,
@@ -179,6 +191,7 @@ if __name__ == "__main__":
     flags.DEFINE_boolean("profile", False, "profiling")
     flags.DEFINE_integer("kbest", 1, "kbest output", short_name="k")
     flags.DEFINE_boolean("forest", False, "dump +LM forest")
+    flags.DEFINE_boolean("futurecost", True, "precompute future cost")
 
     argv = FLAGS(sys.argv)
 
