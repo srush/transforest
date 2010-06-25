@@ -20,7 +20,6 @@ class Ngram(object):
             return None
 #             print >> logs, "Error: must specify an LM file --lm" + str(FLAGS)
 #             sys.exit(1)            
-
         return Ngram(order=FLAGS.order, lmfilename=FLAGS.lm)
     
     def __init__(self, order, lmfilename):
@@ -31,6 +30,7 @@ class Ngram(object):
         import time
         t0 = time.clock()
         print >> logs, "reading lm from", lmfilename
+        print >> logs, "lm order is %d"  % order
         self.ngram.read(lmfilename, limit_vocab=False)
         print >> logs, "lm loaded in %.2lf seconds" % (time.clock() - t0)
         self.pqcache = {}

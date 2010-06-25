@@ -22,23 +22,35 @@ class CYKDecoder(object):
 
     def beam_search(self, forest, b):
         self.translate(forest.root, b)
+        self.lm_edges = 0
+        self.lm_nodes = 0
         return forest.root.hypvec[0]
-        
+
+    def search_size(self):
+        return self.lm_nodes, self.lm_edges
+
+    def reset_size(self):
+        self.lm_nodes = 0
+        self.lm_edges = 0
+    
     def translate(self, cur_node, b):
         for hedge in cur_node.edges:
             for sub in hedge.subs:
                 if not hasattr(sub, 'hypvec'):
                     self.translate(sub, b)
         # create cube
-        if FLAGS.debuglevel > 0:
-            print >>logs, "searching on node: %s" % cur_node
         cands = self.init_cube(cur_node)
         heapq.heapify(cands)
         # gen kbest
         cur_node.hypvec = self.lazykbest(cands, b)
-        if FLAGS.debuglevel > 0:
-            for (sc, tran, fv) in cur_node.hypvec:
-                print >> logs, tran
+
+        #lm nodes
+        self.lm_nodes += len(cur_node.hypvec)
+        #lm edges
+        for cedge in cur_node.edges:
+            self.lm_edges += len(cedge.oldvecs)
+ 
+        
         
     def init_cube(self, cur_node):
         cands = []
@@ -49,24 +61,43 @@ class CYKDecoder(object):
             newhyp = self.gethyp(cedge, newvecj)
             cands.append((newhyp, cedge, newvecj))
         return cands
-    
+
+        
     def lazykbest(self, cands, k):
         hypvec = []
-        while len(hypvec) < k:
-            if cands == []:
-                break
-            (chyp, cedge, cvecj) = heapq.heappop(cands)
-            hypvec.append(chyp)
-            self.lazynext(cedge, cvecj, cands)
+        if FLAGS.cube:
+            signs = set()
+            cur_kbest = 0
+            while cur_kbest < k:
+                if cands == []:
+                    break
+                (chyp, cedge, cvecj) = heapq.heappop(cands)
+
+                cursig = CYKDecoder.gen_sign(chyp[1])
+                if cursig not in signs:
+                    signs.add(cursig)
+                    cur_kbest += 1
+                    
+                hypvec.append(chyp)
+                self.lazynext(cedge, cvecj, cands)
+        else:
+            while True:
+                if cands == []:
+                    break
+                (chyp, cedge, cvecj) = heapq.heappop(cands)
+                hypvec.append(chyp)
+                self.lazynext(cedge, cvecj, cands)
+
         #sort and combine hypevec
-        hypvec = sorted(hypvec)
-        # COMBINATION
-        keylist = []
+        hypvec = sorted(hypvec)[0:k]
+        #COMBINATION
+        keylist = set()
         newhypvec = []
         for (sc, trans, fv) in hypvec:
             if trans not in keylist:
-                keylist.append(trans)
+                keylist.add(trans)
                 newhypvec.append((sc, trans, fv))
+        
         return newhypvec
     
     def lazynext(self, cedge, cvecj, cands):
@@ -78,8 +109,7 @@ class CYKDecoder(object):
                 if newhyp is not None:
                     cedge.oldvecs.add(newvecj)
                     heapq.heappush(cands, (newhyp, cedge, newvecj))
-
-    
+                        
     def gethyp(self, cedge, vecj):
         score = cedge.fvector.dot(self.weights) 
         fvector = Vector(cedge.fvector)
@@ -102,7 +132,14 @@ class CYKDecoder(object):
     @staticmethod
     def get_history(history):
         return ' '.join(history[-lm.order+1:] if len(history) >= lm.order else history)
-    
+
+    @staticmethod
+    def gen_sign(self, trans):
+        if len(trans) >= lm.order:
+            return ' '.join(trans[:lm.order-1]) + ' '.join(trans[-lm.order+1:])
+        else:
+            return ' '.join(trans)
+                            
     @staticmethod
     def deltLMScore(lhsstr, sublmstr):
         history = []
@@ -141,6 +178,7 @@ if __name__ == "__main__":
     flags.DEFINE_integer("beam", 1, "beam size", short_name="b")
     flags.DEFINE_integer("debuglevel", 0, "debug level")
     flags.DEFINE_boolean("mert", True, "output mert-friendly info (<hyp><cost>)")
+    flags.DEFINE_boolean("cube", True, "using cube pruning to speedup")
     flags.DEFINE_integer("kbest", 1, "kbest output", short_name="k")
 
     argv = FLAGS(sys.argv)
@@ -155,34 +193,49 @@ if __name__ == "__main__":
     tot_time = 0.
     tot_len = tot_fnodes = tot_fedges = 0
 
+    tot_lmedges = 0
+    tot_lmnodes = 0
     if FLAGS.debuglevel > 0:
         print >>logs, "beam size = %d" % FLAGS.beam
 
     for i, forest in enumerate(Forest.load("-", is_tforest=True, lm=lm), 1):
 
         t = time.time()
-        
+
+        # set the lm_nodes and lm_edges to zero
+        decoder.reset_size()
+        #decoding
         (score, trans, fv) = decoder.beam_search(forest, b=FLAGS.beam)
-        print trans
-        print >>logs, "featurs: %s" % fv
+
         t = time.time() - t
         tot_time += t
 
+        print trans
+        print >>logs, "featurs: %s" % fv
+        
         tot_score += score
         forest.bleu.rescore(trans)
         tot_bleu += forest.bleu
 
+        # lm nodes and edges
+        lm_nodes, lm_edges = decoder.search_size()
+        tot_lmnodes += lm_nodes
+        tot_lmedges += lm_edges
+        
+        # tforest size
         fnodes, fedges = forest.size()
-
-        tot_len += len(forest.sent)
         tot_fnodes += fnodes
         tot_fedges += fedges
 
-        print >> logs, "sent %d, b %d\tscore:%.3lf time %.3lf\tsentlen %d\tfnodes %d\ttfedges %d" % \
-              (i, FLAGS.beam, score, t, len(forest.sent), fnodes, fedges)
+        tot_len += len(forest.sent)
+
+        print >> logs, "sent %d, b %d\tscore:%.3lf time %.3lf\tsentlen %d\tfnodes %d\ttfedges %d\tlmnodes %d\tlmedges %d" % \
+              (i, FLAGS.beam, score, t, len(forest.sent), fnodes, fedges, lm_nodes, lm_edges)
                                                                            
     print >> logs, ("avg %d sentences, b %d\tscore %.4lf\ttime %.3lf" + \
-          "\tsentlen %.3lf fnodes %.1lf fedges %.1lf") % \
-          (i, FLAGS.beam, float(tot_score)/i, tot_time/i,
-          tot_len/i, tot_fnodes/i, tot_fedges/i)
+                    "\tsentlen %.3lf fnodes %.1lf fedges %.1lf" + \
+                    "\tlmnodes %.3lf lmedges %.3lf") % \
+                    (i, FLAGS.beam, float(tot_score)/i, tot_time/i, \
+                     tot_len/i, tot_fnodes/i, tot_fedges/i,\
+                     tot_lmnodes/i, tot_lmedges/i)
 

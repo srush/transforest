@@ -143,7 +143,7 @@ class LMState(object):
                     this = symbol # LMState.lm.word2index(symbol)
                     self.stack[-1].advance() # dot ++
                     #TODO fix ngram
-                    lmscore = LMState.lm.ngram.wordprob(this, self.lmstr())
+                    lmscore = LMState.lm.ngram.wordprobw(this, self.lmstr())
 
                     self.score += lmscore * LMState.weights.lm_weight
                     _, extra_fv, extra_words = self.backptrs[0]
