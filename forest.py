@@ -59,9 +59,6 @@ class Forest(object):
 
     globalruleid = 0    
 
-    #PARSEFOREST = 0
-    #TRANSFOREST = 1
-
     def copy(self):
         '''must be deep!'''
         return copy.deepcopy(self)

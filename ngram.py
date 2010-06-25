@@ -47,6 +47,14 @@ class Ngram(object):
         for i in range(self.order - 1, len(t)):
             score += self.ngram.wordprob(t[i], t[i - self.order + 1: i])
         return -score   # negative logprob
+
+    def word_prob_bystr(self, s, his):
+        ## traditional interface (for debugging), although i can use pq()
+        ns = self.word2index(s)
+        nhis = self.words2indices(his)
+        score = self.ngram.wordprob(ns, nhis)
+        return -score   # negative logprob
+
         
     def clear(self):
         self.pqcache = {}
