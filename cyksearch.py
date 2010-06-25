@@ -14,8 +14,6 @@ from svector import Vector
 
 import heapq
 
-import math
-
 class CYKDecoder(object):
 
     def __init__(self, weights, lm):
@@ -33,15 +31,14 @@ class CYKDecoder(object):
                     self.translate(sub, b)
         # create cube
         if FLAGS.debuglevel > 0:
-            print "searching on node: %s" % cur_node
+            print >>logs, "searching on node: %s" % cur_node
         cands = self.init_cube(cur_node)
         heapq.heapify(cands)
         # gen kbest
         cur_node.hypvec = self.lazykbest(cands, b)
         if FLAGS.debuglevel > 0:
             for (sc, tran, fv) in cur_node.hypvec:
-                print tran
-            print "_____________________________________"
+                print >> logs, tran
         
     def init_cube(self, cur_node):
         cands = []
@@ -79,7 +76,7 @@ class CYKDecoder(object):
             if newvecj not in cedge.oldvecs:
                 newhyp = self.gethyp(cedge, newvecj)
                 if newhyp is not None:
-                    cedge.oldvecs.append(newvecj)
+                    cedge.oldvecs.add(newvecj)
                     heapq.heappush(cands, (newhyp, cedge, newvecj))
 
     
@@ -159,7 +156,7 @@ if __name__ == "__main__":
     tot_len = tot_fnodes = tot_fedges = 0
 
     if FLAGS.debuglevel > 0:
-        print "beam size = %d" % FLAGS.beam
+        print >>logs, "beam size = %d" % FLAGS.beam
 
     for i, forest in enumerate(Forest.load("-", is_tforest=True, lm=lm), 1):
 
@@ -167,7 +164,7 @@ if __name__ == "__main__":
         
         (score, trans, fv) = decoder.beam_search(forest, b=FLAGS.beam)
         print trans
- #       print "best score %s, trans: %s, features: %s" % (score, trans, fv)
+        print >>logs, "featurs: %s" % fv
         t = time.time() - t
         tot_time += t
 
@@ -181,13 +178,11 @@ if __name__ == "__main__":
         tot_fnodes += fnodes
         tot_fedges += fedges
 
-#        print >> logs, ("sent %d, b %d\tscore %.4f\tbleu+1 %s" + \
-#              "\ttime %.3f\tsentlen %-3d fnodes") % \
-#              (i, FLAGS.beam, score, 
-#               forest.bleu.score_ratio_str(), t, len(forest.sent), fnodes, fedges)
+        print >> logs, "sent %d, b %d\tscore:%.3lf time %.3lf\tsentlen %d\tfnodes %d\ttfedges %d" % \
+              (i, FLAGS.beam, score, t, len(forest.sent), fnodes, fedges)
                                                                            
-#    print >> logs, ("avg %d sentences, b %d\tscore %.4lf\tbleu %s\ttime %.3f" + \
-#          "\tsentlen %.1f fnodes %.1f fedges") % \
-#          (i, FLAGS.beam, tot_score/i, tot_bleu.score_ratio_str(), tot_time/i,
-#          tot_len/i, tot_fnodes/i, tot_fedges/i)
+    print >> logs, ("avg %d sentences, b %d\tscore %.4lf\ttime %.3lf" + \
+          "\tsentlen %.3lf fnodes %.1lf fedges %.1lf") % \
+          (i, FLAGS.beam, float(tot_score)/i, tot_time/i,
+          tot_len/i, tot_fnodes/i, tot_fedges/i)
 

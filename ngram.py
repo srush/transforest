@@ -53,7 +53,7 @@ class Ngram(object):
         ns = self.word2index(s)
         nhis = self.words2indices(his)
         score = self.ngram.wordprob(ns, nhis)
-        return -score   # negative logprob
+        return score   # negative logprob
 
         
     def clear(self):
