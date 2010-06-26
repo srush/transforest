@@ -428,6 +428,11 @@ class Tree(object):
                 sub.pp(level+1)
         else:
             print "%s%s %s" % ("| " * level, self.labelspan(), self.word)
+
+    def height(self, level=0):
+        if self.is_terminal():
+            return 1
+        return max([sub.height() for sub in self.subs]) + 1            
             
 ###########################################
 
@@ -448,6 +453,8 @@ if __name__ == "__main__":
     flags.DEFINE_integer("max_len", 400, "maximum sentence length")
     flags.DEFINE_boolean("pp", False, "pretty print")
     flags.DEFINE_boolean("toforest", False, "convert to trivial forest")
+    flags.DEFINE_boolean("height", False, "output the height of each tree")
+    
     argv = FLAGS(sys.argv)
 
     for i, line in enumerate(sys.stdin):
@@ -457,5 +464,7 @@ if __name__ == "__main__":
                 print_forest(t, tid=i)
             elif FLAGS.pp:
                 t.pp()
+            elif FLAGS.height:
+                print "%d\t%d" % (len(t), t.height())
             else:
                 print t
