@@ -62,7 +62,7 @@ class LMState(object):
     ''' stack is a list of dotted rules(hyperedges, dot_position) '''
 
     # backptrs = [((prev_state, ...), extra_fv, extra_words)]
-    __slots__ = "stack", "_trans", "score", "step", "_hash", "backptrs"
+    __slots__ = "stack", "_trans", "score", "step", "_hash", "backptrs", "_lmstr"
 
     weights = None
     lm = None
@@ -98,6 +98,7 @@ class LMState(object):
     def __init__(self, prev_state, stack, trans, step=0, score=0, extra_fv=Vector()):
         self.stack = stack
         self._trans = trans
+        self._lmstr = self._trans[-LMState.lm.order+1:]
         self.step = step
         self.score = score
 
@@ -130,7 +131,8 @@ class LMState(object):
 
     def lmstr(self):
         # TODO: cache real lmstr
-        return self._trans[-LMState.lm.order+1:] if LMState.dp else self._trans
+##        return self._trans[-LMState.lm.order+1:] if LMState.dp else self._trans
+        return self._lmstr
 
     def scan(self):
 
@@ -143,17 +145,18 @@ class LMState(object):
                     this = symbol # LMState.lm.word2index(symbol)
                     self.stack[-1].advance() # dot ++
                     #TODO fix ngram
-                    lmscore = LMState.lm.ngram.wordprobw(this, self.lmstr())
+                    lmscore = LMState.lm.ngram.wordprob(this, self._lmstr)
 
                     self.score += lmscore * LMState.weights.lm_weight
                     _, extra_fv, extra_words = self.backptrs[0]
                     extra_fv["lm"] += lmscore
                     extra_words += [this,]
                     self._trans += [this,]
+                    self._lmstr = self._trans[-LMState.lm.order+1:]
                 else:
                     break
             else:
-                self.step += self.stack[-1].tree_size()
+#                self.step += 0 #self.stack[-1].tree_size()
                 self.stack = self.stack[:-2] + [self.stack[-2].advanced()]
 
         self.rehash()
@@ -171,12 +174,12 @@ class LMState(object):
                           self.score) # no additional cost/fv
 
     def rehash(self):
-        self._hash = hash(tuple(self.stack) + tuple(self.lmstr()))# + (self.score, self.step))
+        self._hash = hash(tuple(self.stack) + tuple(self._lmstr))# + (self.score, self.step))
 
     def __eq__(self, other):
         ## calls DottedRule.__eq__()
         return self.stack == other.stack and \
-               self.lmstr() == other.lmstr()
+               self._lmstr == other._lmstr
 
     def __cmp__(self, other):
         return cmp(self.score, other.score)
@@ -250,3 +253,92 @@ class LMState(object):
         self._toforest(lmforest, forest.sent, cache)
 
         return lmforest
+
+
+class TaroState(LMState):
+
+    ''' stack is a list of dotted rules(hyperedges, dot_position) '''
+
+    # backptrs = [((prev_state, ...), extra_fv, extra_words)]
+
+    @staticmethod
+    def start_state(root):
+        ''' None -> <s>^{g-1} . TOP </s>^{g-1} '''
+
+##        LMState.cache = {}
+
+        lmstr = LMState.lm.raw_startsyms()
+        
+        sc = root.bestres[0] if FLAGS.futurecost else 0
+        
+        return TaroState(None,
+                         stack=tuple(LMState.lm.stopsyms()) + (root,),
+                         trans=LMState.lm.startsyms(),
+                         step=0, score=sc) # future cost
+    
+    def __init__(self, prev_state, stack, trans, step=0, score=0, extra_fv=Vector()):
+        self.stack = stack
+        self._trans = trans
+        self._lmstr = self._trans[-LMState.lm.order+1:]
+        self.step = step
+        self.score = score
+
+        # maintain delta_fv and cumulative score; but not cumul fv and delta score
+        self.backptrs = [((prev_state,), extra_fv, [])] # no extra_words yet
+        
+        self.scan()        
+
+    def predict(self):
+        
+        next_symbol = self.stack[-1]
+        
+        if type(next_symbol) is Node:
+            base = self.score - (next_symbol.bestedge.beta if FLAGS.futurecost else 0)
+            for edge in next_symbol.edges:
+                # N.B.: copy trans
+##                    score = self.score + edge.fvector.dot(LMState.weights),
+                if FLAGS.futurecost:
+                    future = sum([sub.bestedge.beta for sub in edge.subs])
+                else:
+                    future = 0
+
+                score = base + future + edge.fvector.dot(LMState.weights)
+
+                yield TaroState(self,
+                                self.stack[:-1] + tuple(reversed(edge.lmlhsstr)),
+                                self._trans[:], 
+                                self.step + edge.rule.tree_size(),
+                                score,
+                                extra_fv=Vector()+edge.fvector) # N.B.: copy! + is faster
+            
+    def scan(self):
+        '''actually, pop'''
+
+        while len(self.stack) > 0:
+            # scan
+            symbol = self.stack[-1]
+            if type(symbol) is int:
+                # TODO: cache lm index
+                this = symbol # LMState.lm.word2index(symbol)
+
+                lmscore = LMState.lm.ngram.wordprob(this, self._lmstr)
+                
+                self.score += lmscore * LMState.weights.lm_weight
+                _, extra_fv, extra_words = self.backptrs[0]
+                extra_fv["lm"] += lmscore
+                extra_words += [this,]
+                self._trans += [this,]
+                self._lmstr = self._trans[-LMState.lm.order+1:]
+
+                self.stack = self.stack[:-1] # pop
+            else:
+                break
+
+        self.rehash()
+
+    def is_final(self):
+        ''' a complete translation'''
+        return len(self.stack) == 0
+
+    def rehash(self):
+        self._hash = hash(self.stack + tuple(self._lmstr))

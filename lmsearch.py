@@ -11,9 +11,12 @@ logs = sys.stderr
 import gflags as flags
 FLAGS=flags.FLAGS
 
-from lmstate import LMState
+from lmstate import LMState, TaroState
 from bleu import Bleu
 from svector import Vector
+
+flags.DEFINE_boolean("newbeam", True, "new beaming")
+flags.DEFINE_boolean("taro", True, "Taro-style state")
 
 class Decoder(object):
 
@@ -31,15 +34,19 @@ class Decoder(object):
 
         self.num_edges += 1
 
-        old = beam.get(new, None)
-        if old is None or new < old:
-            if old is not None: # in-beam
-                new.merge_with(old)
-            
-            beam[new] = new
-            
-            if FLAGS.debuglevel >= 2:
-                print >> logs, "adding to beam %d: %s" % (new.step, new)
+        if not FLAGS.newbeam:
+            old = beam.get(new, None)
+            if old is None or new < old:
+                if old is not None: # in-beam
+                    new.merge_with(old)
+
+                beam[new] = new
+
+                if FLAGS.debuglevel >= 2:
+                    print >> logs, "adding to beam %d: %s" % (new.step, new)
+        else:
+            # new beam: simply hold it here, uniq later
+            beam.append(new)
 
     def beam_search(self, forest, b=1):
 
@@ -52,14 +59,15 @@ class Decoder(object):
             self.firstpassbleus += forest.bleu
 
         self.num_states = self.num_edges = 0
+        self.num_stacks = 0
         self.final_items = []
         self.best = None
         
-        beams = defaultdict(dict) # +inf
+        beams = defaultdict(dict if not FLAGS.newbeam else list) # +inf
         self.beams = beams
         
         self.max_step = -1
-        self.add_state(LMState.start_state(forest.root)) # initial state
+        self.add_state(LMState.start_state(forest.root) if not FLAGS.taro else TaroState.start_state(forest.root)) # initial state
 
         self.nstates = 0  # space complexity
         self.nedges = 0 # time complexity
@@ -67,8 +75,23 @@ class Decoder(object):
         i = 0
         while i <= self.max_step:
 
-            # N.B.: values, not keys! (keys may not be updated)
-            curr_beam = sorted(beams[i].values())[:b]  # beam pruning
+            if not FLAGS.newbeam:
+                # N.B.: values, not keys! (keys may not be updated)
+                curr_beam = sorted(beams[i].values())[:b]  # beam pruning, already uniq
+            else:
+                buf = sorted(beams[i])[:b]  # beam pruning, not uniq
+                curr_beam = []
+                uniq = {}
+                uniq_stack = {}
+                for item in buf:
+                    if item not in uniq:
+                        uniq[item] = item
+                        curr_beam.append(item)
+                        
+                    uniq_stack[item.stack] = item
+                    
+                self.num_stacks += len(uniq_stack)
+                
             self.num_states += len(curr_beam)
             
             if FLAGS.debuglevel >= 1:
@@ -80,7 +103,7 @@ class Decoder(object):
                 if old.is_final():
                     self.final_items.append(old)        
 
-                if not old.is_final():
+                else:
                     for new in old.predict():
                         self.add_state(new)
 
@@ -109,7 +132,7 @@ def main():
     tot_score = 0.
     tot_time = 0.
     tot_len = tot_fnodes = tot_fedges = 0
-    tot_steps = tot_states = tot_edges = 0
+    tot_steps = tot_states = tot_edges = tot_stacks = 0
 
     for i, forest in enumerate(Forest.load("-", is_tforest=True, lm=lm), 1):
 
@@ -133,12 +156,13 @@ def main():
         tot_steps += decoder.max_step
         tot_states += decoder.num_states
         tot_edges += decoder.num_edges
+        tot_stacks += decoder.num_stacks
 
         print >> logs, ("sent %d, b %d\tscore %.4f\tbleu+1 %s" + \
-              "\ttime %.3f\tsentlen %-3d fnodes %-4d fedges %-5d\tstep %d  states %d  edges %d") % \
+              "\ttime %.3f\tsentlen %-3d fnodes %-4d fedges %-5d\tstep %d  states %d  edges %d stacks %d") % \
               (i, FLAGS.beam, score, 
                forest.bleu.score_ratio_str(), t, len(forest.sent), fnodes, fedges,
-               decoder.max_step, decoder.num_states, decoder.num_edges)
+               decoder.max_step, decoder.num_states, decoder.num_edges, decoder.num_stacks)
 
         if FLAGS.k > 1 or FLAGS.forest:
            lmforest = best.toforest(forest)
@@ -175,10 +199,10 @@ def main():
           (i, decoder.firstpassscore/i, decoder.firstpassbleus.score_ratio_str())
                                                                             
     print >> logs, ("avg %d sentences, b %d\tscore %.4lf\tbleu %s\ttime %.3f" + \
-          "\tsentlen %.1f fnodes %.1f fedges %.1f\tstep %.1f states %.1f edges %.1f") % \
+          "\tsentlen %.1f fnodes %.1f fedges %.1f\tstep %.1f states %.1f edges %.1f stacks %.1f") % \
           (i, FLAGS.beam, tot_score/i, tot_bleu.score_ratio_str(), tot_time/i,
            tot_len/i, tot_fnodes/i, tot_fedges/i,
-           tot_steps/i, tot_states/i, tot_edges/i)
+           tot_steps/i, tot_states/i, tot_edges/i, tot_stacks/i)
 
     print >> logs, LMState.cachehits, LMState.cachemiss
 
