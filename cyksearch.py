@@ -1,8 +1,10 @@
 #!/usr/bin/env python
+from __future__ import division
 
 import sys
 import time
 from collections import defaultdict
+
 
 logs = sys.stderr
 
@@ -21,18 +23,34 @@ class CYKDecoder(object):
         self.lm = lm
 
     def beam_search(self, forest, b):
-        self.translate(forest.root, b)
         self.lm_edges = 0
         self.lm_nodes = 0
+        # translation
+        self.translate(forest.root, b)
         return forest.root.hypvec[0]
 
+    def output_kbest(self, forest, i, mert):
+        '''output the kbest translations in root vector'''
+        if mert:
+            print >> logs, '<sent No="%d">' % i
+            print >> logs, "<Chinese>%s</Chinese>" % " ".join(forest.cased_sent)
+
+        for k, (sc, trans, fv, _) in enumerate(forest.root.hypvec, 1):
+            if mert:
+                print >> logs, "<score>%.3lf</score>" % sc
+                print >> logs, "<hyp>%s</hyp>" % trans
+                print >> logs, "<cost>%s</cost>" % fv
+
+            hyp_bleu = forest.bleu.rescore((hyp))
+            print >> logs, "k=%d\tscore=%.4lf\tbleu+1=%.4lf\tlenratio=%.2lf\t%s" % \
+                  (k, sc, hyp_bleu, forest.bleu.ratio(), fv)
+
+        if mert:
+            print >> logs, "</sent>"
+            
     def search_size(self):
         return self.lm_nodes, self.lm_edges
-
-    def reset_size(self):
-        self.lm_nodes = 0
-        self.lm_edges = 0
-    
+   
     def translate(self, cur_node, b):
         for hedge in cur_node.edges:
             for sub in hedge.subs:
@@ -51,7 +69,6 @@ class CYKDecoder(object):
             self.lm_edges += len(cedge.oldvecs)
  
         
-        
     def init_cube(self, cur_node):
         cands = []
         for cedge in cur_node.edges:
@@ -63,40 +80,31 @@ class CYKDecoder(object):
         return cands
 
         
-    def lazykbest(self, cands, k):
+    def lazykbest(self, cands, b):
         hypvec = []
-        if FLAGS.cube:
-            signs = set()
-            cur_kbest = 0
-            while cur_kbest < k:
-                if cands == []:
-                    break
-                (chyp, cedge, cvecj) = heapq.heappop(cands)
-
-                cursig = CYKDecoder.gen_sign(chyp[1])
-                if cursig not in signs:
-                    signs.add(cursig)
-                    cur_kbest += 1
-                    
-                hypvec.append(chyp)
-                self.lazynext(cedge, cvecj, cands)
-        else:
-            while True:
-                if cands == []:
-                    break
-                (chyp, cedge, cvecj) = heapq.heappop(cands)
-                hypvec.append(chyp)
-                self.lazynext(cedge, cvecj, cands)
-
+        signs = set()
+        cur_kbest = 0
+        while cur_kbest < b:
+            if cands == [] or len(hypvec) >= (FLAGS.ratio*b):
+                break
+            (chyp, cedge, cvecj) = heapq.heappop(cands)
+            if chyp[3] not in signs:
+                signs.add(chyp[3])
+                cur_kbest += 1
+            hypvec.append(chyp)
+            self.lazynext(cedge, cvecj, cands)
+ 
         #sort and combine hypevec
-        hypvec = sorted(hypvec)[0:k]
+        hypvec = sorted(hypvec)
         #COMBINATION
         keylist = set()
         newhypvec = []
-        for (sc, trans, fv) in hypvec:
-            if trans not in keylist:
-                keylist.add(trans)
+        for (sc, trans, fv, sig) in hypvec:
+            if sig not in keylist:
+                keylist.add(sig)
                 newhypvec.append((sc, trans, fv))
+            if len(newhypvec) >= b:
+                break
         
         return newhypvec
     
@@ -124,17 +132,17 @@ class CYKDecoder(object):
             score += sc
             fvector += fv
         
-        (lmsc, alltrans) = CYKDecoder.deltLMScore(lmstr, subtrans)
+        (lmsc, alltrans, sig) = CYKDecoder.deltLMScore(lmstr, subtrans)
         score += (lmsc * self.weights['lm'])  
         fvector['lm'] += lmsc
-        return (score, alltrans, fvector)
+        return (score, alltrans, fvector, sig)
     
     @staticmethod
     def get_history(history):
         return ' '.join(history[-lm.order+1:] if len(history) >= lm.order else history)
 
     @staticmethod
-    def gen_sign(self, trans):
+    def gen_sign(trans):
         if len(trans) >= lm.order:
             return ' '.join(trans[:lm.order-1]) + ' '.join(trans[-lm.order+1:])
         else:
@@ -156,7 +164,7 @@ class CYKDecoder(object):
                 if len(history) == 0: # the beginning words
                     history.extend(curtrans)
                 else:
-                    # TODO: minus prob
+                    # minus prob
                     for i, word in enumerate(curtrans, 1):
                         if i < lm.order:
                             lmscore += lm.word_prob_bystr(word,\
@@ -166,8 +174,8 @@ class CYKDecoder(object):
                             lmscore -= lm.word_prob_bystr(word, myhis)
                             
                         history.append(word)
-                        
-        return (lmscore, " ".join(history))
+        
+        return (lmscore, " ".join(history), CYKDecoder.gen_sign(history))
 
 if __name__ == "__main__":
 
@@ -175,11 +183,13 @@ if __name__ == "__main__":
     from model import Model
     from forest import Forest
 
-    flags.DEFINE_integer("beam", 1, "beam size", short_name="b")
+    flags.DEFINE_integer("beam", 100, "beam size", short_name="b")
     flags.DEFINE_integer("debuglevel", 0, "debug level")
     flags.DEFINE_boolean("mert", True, "output mert-friendly info (<hyp><cost>)")
     flags.DEFINE_boolean("cube", True, "using cube pruning to speedup")
     flags.DEFINE_integer("kbest", 1, "kbest output", short_name="k")
+    flags.DEFINE_integer("ratio", 3, "the maximum items (pop from PQ): ratio*b", short_name="r")
+  
 
     argv = FLAGS(sys.argv)
 
@@ -201,9 +211,6 @@ if __name__ == "__main__":
     for i, forest in enumerate(Forest.load("-", is_tforest=True, lm=lm), 1):
 
         t = time.time()
-
-        # set the lm_nodes and lm_edges to zero
-        decoder.reset_size()
         #decoding
         (score, trans, fv) = decoder.beam_search(forest, b=FLAGS.beam)
 
@@ -211,11 +218,12 @@ if __name__ == "__main__":
         tot_time += t
 
         print trans
-        print >>logs, "featurs: %s" % fv
-        
+        if FLAGS.kbest > 1:
+            decoder.output_kbest(forest, i, FLAGS.mert)
+       
         tot_score += score
-        forest.bleu.rescore(trans)
-        tot_bleu += forest.bleu
+        #forest.bleu.rescore((trans))
+        #tot_bleu += forest.bleu
 
         # lm nodes and edges
         lm_nodes, lm_edges = decoder.search_size()
