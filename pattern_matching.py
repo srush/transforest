@@ -13,12 +13,15 @@ logs = sys.stderr
 
 class PatternMatching(object):
 
-    def __init__(self, forest, ruleset, filtered_ruleset, deffields, filter=False):
+    def __init__(self, forest, ruleset, deffields, max_height, filter=False):
         self.forest = forest
         self.ruleset = ruleset
-        self.filtered_ruleset = filtered_ruleset
+        self.max_height = max_height
         self.deffields = deffields
         self.filter = filter
+
+        if self.filter:
+            self.all_lhss = set()
 
         # store all the descendants of a node {node, (descendant nodes)}
         self.descendants = defaultdict(lambda : set())
@@ -30,10 +33,6 @@ class PatternMatching(object):
     def deffrag(self, node):
         '''# add default frag (lhs, rsh, height) = (PU, [node], 0)'''
         return (node.label, [node], 0)
-    
-    def add_filterrules(self, fruleset, lhs, rules):
-        if lhs not in fruleset:
-            fruleset[lhs] = rules
     
     def convert(self):
         '''convert parse forest into translation forest'''
@@ -50,11 +49,14 @@ class PatternMatching(object):
 
                 # NOTICE: Clear the original prasing hyperedges
                 node.edges = []
-                # add lexical translation hyperedges
-                self.add_lex_th(frag[0], node, False)
 
-                # add phrase
-                self.add_lex_th('"%s"' % node.word, node, True)
+                if self.filter:  # only for rule filter, don't have to generate translation forest
+                    self.all_lhss.add(frag[0])
+                else:
+                    # add lexical translation hyperedges
+                    self.add_lex_th(frag[0], node, False)
+                    # add phrase
+                    self.add_lex_th('"%s"' % node.word, node, True)
                 
             else:  # it's a non-terminal node
                 #append the default frag (lhs, rhs, height) = (PU, node, 0)
@@ -62,12 +64,14 @@ class PatternMatching(object):
                 # add non-terminal translation hyperedges
                 self.add_nonter_th(node)
 
-                # add phrase
-                self.add_lex_th('"%s"' % node.surface, node, True)
-                
-        self.remove_unreach()
-        
-        return forest
+                if not self.filter:
+                    # add phrase
+                    self.add_lex_th('"%s"' % node.surface, node, True)
+        if self.filter:
+            return self.all_lhss
+        else:
+            self.remove_unreach()      
+            return forest
 
     def remove_unreach(self):
         rootid = self.forest.root.iden
@@ -89,15 +93,15 @@ class PatternMatching(object):
         #print >> logs, "reachable set"
         #print >> logs, reachable
         self.forest.update_nodes(reachable)    
-            
+
     @staticmethod
-    def combinetwofrags(basefrag, varfrag, id, lastchild):
+    def combinetwofrags(basefrag, varfrag, id, lastchild, max_height):
         '''combine two frags'''
         blhs, brhs, bheight = basefrag
         vlhs, vrhs, vheight = varfrag
         # compute the frag height
-        height = bheight if bheight > (vheight + 1) else (vheight+1)
-        if height >3:
+        height = bheight if bheight > (vheight + 1) else (vheight + 1)
+        if height > max_height:
             return None
         
         lhs = "%s %s" % (blhs, vlhs) if id>0 else "%s%s" % (blhs, vlhs)
@@ -115,11 +119,7 @@ class PatternMatching(object):
         ruleset = self.ruleset
         if lhs in ruleset:
             rules = ruleset[lhs]
-
-            # add rules to filtered_ruleset
-            if self.filter:
-                self.add_filterrules(self.filtered_ruleset, lhs, rules)
-
+            
             # add all translation hyperedges
             for rule in rules:
                 newrhs = [x[1:-1] for x in rule.rhs]
@@ -152,39 +152,39 @@ class PatternMatching(object):
                 for (id, sub) in enumerate(edge.subs):
                     oldfrags = basefrags
                     # cross-product
-                    basefrags = [PatternMatching.combinetwofrags(oldfrag, frag, id, lastchild) \
+                    basefrags = [PatternMatching.combinetwofrags(oldfrag, frag, id, lastchild, self.max_height) \
                                  for oldfrag in oldfrags for frag in sub.frags]
 
             # for each frag add translation hyperedges
             for extfrag in basefrags:
+                print extfrag
                 extlhs, extrhs, extheight = extfrag
                 # add frags
-                if extheight <= 2:
+                if extheight <= self.max_height - 1:
                     node.frags.append(extfrag)
-                        
-                # add translation hyperedges
-                if extlhs in ruleset:
-                    for des in extrhs:
-                        self.descendants[node.iden].add(des.iden) #unit(set(extrhs))
-                    #print self.descendants[node.iden]
+
+                if self.filter:
+                    self.all_lhss.add(extlhs)
+                else:
+                    # add translation hyperedges
+                    if extlhs in ruleset:
+                        for des in extrhs:
+                            self.descendants[node.iden].add(des.iden) #unit(set(extrhs))
+                        #print self.descendants[node.iden]
                     
-                    rules = ruleset[extlhs]
-                            
-                    # add rules to filtered_ruleset
-                    if self.filter:
-                        self.add_filterrules(self.filtered_ruleset, extlhs, rules)
-
-                    # add all translation hyperedges
-                    for rule in rules:
-                        rhsstr = [x[1:-1] if x[0]=='"' \
-                                          else extrhs[int(x.split('x')[1])] \
-                                          for x in rule.rhs]
-                        tfedge = Hyperedge(node, extrhs,\
-                                          Vector(rule.fields), rhsstr)
-                        tfedge.rule = rule
-                        tfedges.append(tfedge)
-
-            if len(tfedges) == 0:  # no translation hyperedge
+                        rules = ruleset[extlhs]
+                
+                        # add all translation hyperedges
+                        for rule in rules:
+                            rhsstr = [x[1:-1] if x[0]=='"' \
+                                      else extrhs[int(x.split('x')[1])] \
+                                      for x in rule.rhs]
+                            tfedge = Hyperedge(node, extrhs,\
+                                     Vector(rule.fields), rhsstr)
+                            tfedge.rule = rule
+                            tfedges.append(tfedge)
+            
+            if (not self.filter) and (len(tfedges) == 0):  # no translation hyperedge
                 for des in edge.subs:
                     self.descendants[node.iden].add(des.iden) #unit(set(edge.subs))
                 # add a default translation hyperedge
@@ -196,5 +196,7 @@ class PatternMatching(object):
                 tfedge.rule = defrule
                 ruleset.add_rule(defrule)
                 tfedges.append(tfedge)
-        # inside replace
-        node.edges = tfedges
+
+        if not self.filter:
+            # inside replace
+            node.edges = tfedges

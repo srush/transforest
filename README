@@ -1,102 +1,14 @@
-lmsearch:
+Pipeline: (running example is located at directory ./example)
 
-b=100; i=composed/tst.tforest.com.count2.bp.myp0.3.r10; cat $i | ./lmsearch.py -w config50dp.ini --lm back_core.e.3.srilm -b$b --nomert --futurecost --lmratio 0.8 >$i.b$b.future0.8 2>$i.b$b.log.future0.8 &
-
-i=composed/dev.tforest.com.count2.bp.myp0.3.r10; cat $i | ./lmsearch.py -w config50dp.ini --lm back_core.e.3.srilm -b50 --nomert >$i.b50 2>$i.b50.log &
-
-cat dev501.tforests.nobp.p0.5 | ./lmsearch.py --lm dev501.tforests.p0.5.lm -w config_2_24.ini.lm -b50
-
-RESULTS:
-
-dev (616 sentences)
-
-nobp mincount = 2  config_2_24 (tuned with lenght bug)
-
-1-best  bleu 20.3 (0.98)  1-best 0.002 secs  forest loading 0.01 secs
+1) convert a parse tree to a trivial parse forest
+EXAMPLE: 
+cat short1_parse | ../tree.py --toforest >short1_pforest
 
 
-TODOs:
+2) convert a parse forest into a translation forest
 
--1) Rule class									done by HM
--2) prune top-down filtering    done by HM
--3) "\"" in rules								done by HM
-4) gflags and forest type
--5) tree2forest checkin         done by LH
-6) print derivations
--7) text-length feature         done by HM
-8) GHKM unary rules
--10) refs                       done by LH
--11) drop "str.replace"					done by HM
-12) fix bleu.py
-13) add back uni-lexical 1-count rules ("..." -> )
--14) pattern-match returns an in-placed forest  by HM
--15) merge dump and dumptf into a single function dump    by HM
-
-Notes: 
-
-from 4refs.results.* to translations: | grep -A1 "^k=1" | grep -v "^k=1" | grep -v "^\-\-" 
-from forest to target words: 
-
-    cat 4ref.tforests | grep "^\t" | perl -ple 's/\|\|\|.*$//g' | awk '{for (i=1;i<=NF;i++) print $i}'|grep ^\"| perl -ple 's/^\"//g;s/\"$//g;s/\\//g' | sort |uniq >4ref.targetwords
-
-use target words to prune LM:
-
-Modified by haitao on 2010/05/19:
-	add rule filter in rule.py
-	cat rules.id_large1.prob | ./rule.py 1>frules 2>log
-
-Modified by liang on 2010/05/05:
-
-	cat short_pforests | ./forest.py  -r big_rules ref* >short_tforests  2>convert.log &
-
-pipeline:
-	
-	head parses | ./tree.py --toforest | ./forest.py -r big_rules ref* | ./forest.py -t -w "gt_prob=-1 text-length=-1" --oracle
-
-Modified by haitao on 2010/05/03: 
-	convert a parse forest into a translation forest
-	usage: cat short1_pforest | ./forest.py -r rules.id_large1.prob >short1_tforest
-						     the rule set
-	You can use "-t" to specify an input of translation forest, example: cat sample.transforest | ./forest.py -t -k5 -w "lm1=4"
-
-  	
-translation forest codebase for haitao from liang.
-2010/04/27
-
-NOTE:
-1) mystage-stable/ contains the forest reranking code and example parse forest.
-
-[amadeus:~/work1/translation-forest-code/mystage-stable] cat example.forest | ./forest.py 
-sent #boy, 1-best computed in 0.00 secs
-1	boy
--55.3729
-(S (NP (PRP I)) (VP (VBD saw) (NP (PRP him)) (PP (IN with) (NP (DT a) (NN mirror)))))
-1 forests loaded in 0.00 secs (avg 0.00 per sent)
-
-
-2) sample.transforest is an example translation forest.
-
-[amadeus:~/work1/translation-forest-code] cat sample.transforest | ./forest.py  -k5 -w "lm1=4"
-
-using weights: "lm1=4...lm1=4" (1 fields)
-sent #sent.1, 5-best computed in 0.21 secs
-5	sent.1
-k=1	score=16.4047	bleu+1=0.3861	lenratio=1.05
-by line thank you .
-k=2	score=22.5059	bleu+1=0.6804	lenratio=1.47
-by line thank you very much .
-k=3	score=24.3036	bleu+1=0.2979	lenratio=0.84
-by line members .
-k=4	score=24.3529	bleu+1=0.3297	lenratio=0.84
-by line you .
-k=5	score=25.8540	bleu+1=0.3920	lenratio=0.84
-by line thank you
-1 forests loaded in 0.23 secs (avg 0.23 per sent)
-
-
-3) for translation forest, -k <K> automatically removes duplicate strings.
-
-4) prune.py -p <GAP> does relatively-useless pruning.
-
-5) --oracle prints oracle-BLEU translation.
-
+  2.1) filter the rule set and output the rules only used in current parse forest. NOTE: max_height of lhs="(NP (NN c1))" is 2
+  cat short1_pforest | ../forest.py --rulefilter t2s.rules -w config.ini --max_height 3 >short1_rules
+  
+  2.2) convert a parse forest into a translation forest
+  

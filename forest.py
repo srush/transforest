@@ -42,6 +42,8 @@ from rule import Rule, RuleSet
 
 from model import Model
 
+import itertools
+
 import gflags as flags
 FLAGS=flags.FLAGS
 
@@ -508,6 +510,14 @@ def output_avg_stats():
         print >> logs,  "overall %d sents my    oracle bleu = %s score = %.4lf\t  time %.3f secs" \
               % (i, myoraclebleus.score_ratio_str(), myscores/i, totaloracletime/i)
 
+def filter_input(filename):
+    for line in open(filename):
+        #AD("60.3") -> "60.3" ### 0:0 fields: count=1 id=6
+        lhs, other = line.strip().split(' -> ', 1)
+        #count1 = float(other.split('count1=', 1)[1].split()[0])
+        yield (lhs, line)
+
+
 
 if __name__ == "__main__":
 
@@ -519,7 +529,11 @@ if __name__ == "__main__":
     flags.DEFINE_boolean("dump", False, "dump forest (to stdout)")    
     flags.DEFINE_boolean("infinite", False, "infinite-kbest")    
     flags.DEFINE_float("threshold", None, "threshold/margin")
-    flags.DEFINE_boolean("rulefilter", False, "dump filtered ruleset")    
+
+    flags.DEFINE_string("rulefilter", None, "filter ruleset")
+    flags.DEFINE_integer("max_height", 4, "maximum height of lhs for pattern-matching")
+
+
     flags.DEFINE_float("hope", 0, "hope weight")
     flags.DEFINE_boolean("mert", True, "output mert-friendly info (<hyp><cost)")
 
@@ -534,7 +548,7 @@ if __name__ == "__main__":
 
     reffiles = [open(f) for f in argv[1:]]
 
-    convert_forest = (FLAGS.ruleset is not None)
+    convert_forest = (FLAGS.ruleset is not None or FLAGS.rulefilter is not None )
   
     if FLAGS.ruleset is not None:
         ruleset = RuleSet(FLAGS.ruleset)
@@ -558,6 +572,10 @@ if __name__ == "__main__":
     total1besttime = 0
     totalkbesttime = 0
     totaloracletime = 0
+    totalfiltertime = 0
+    
+    if FLAGS.rulefilter is not None:
+        all_lhss = set()
     
     for i, forest in enumerate(Forest.load("-", is_tforest=(not convert_forest), lm=lm), 1):
  
@@ -630,16 +648,22 @@ if __name__ == "__main__":
 
             if i % 10 == 0:
                 output_avg_stats()
-                
+
+        elif FLAGS.rulefilter is not None:
+            # filter rule set
+            stime = time.time()
+            pm = PatternMatching(forest, {}, '', FLAGS.max_height, True)
+            all_lhss |= pm.convert()
+            etime = time.time()
+            totalfiltertime += (etime - stime)
+
         else:
             # convert pforest to tforest by pattern matching 
             stime = time.time()
             # default fields
             deffields = "gt_prob=-50 proot=-50 prhs=-20 plhs=-20 lexpef=-10 lexpfe=-10 count1=0 count2_3=0 count4=0 prhs_var=-20 plhs_var=-20 ghkm_num=0 bp_num=0 def_num=1"
             # inside replace
-            pm = PatternMatching(forest, ruleset, 
-                                 filtered_ruleset, deffields,
-                                 FLAGS.rulefilter)
+            pm = PatternMatching(forest, ruleset, deffields, False)
             forest = pm.convert()
             forest.compute_size()
             forest.refs = [f.readline().strip() for f in reffiles]
@@ -650,16 +674,18 @@ if __name__ == "__main__":
                   (forest.tag, len(forest), forest.size()[0], forest.size()[1], etime - stime)
             totalconvtime += (etime - stime)
             
-
     if FLAGS.ruleset:
         print >> logs, "Total converting time: %.2lf" % totalconvtime
-    
-    # dump filtered rule set
-    if FLAGS.rulefilter:
-        print >> logs, "Start line of filtered rule set .... "
-        for (lhs, rules) in filtered_ruleset.iteritems():
-            for rule in rules:
-                print >> logs, "%s" % rule
+
+    elif FLAGS.rulefilter is not None:
+        print >> logs, "Start output filtered rules ..."
+            
+        for key, val in itertools.groupby(filter_input(FLAGS.rulefilter), lambda x: x[0]):
+            if key in all_lhss:
+                for (_, line) in val:
+                    print line.strip()  
+
+        print >> logs, "Total rulefilting time: %.2lf" % totalfiltertime
 
     if not convert_forest:  # translation forest
         output_avg_stats()
