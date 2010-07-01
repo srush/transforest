@@ -13,12 +13,13 @@ logs = sys.stderr
 
 class PatternMatching(object):
 
-    def __init__(self, forest, ruleset, deffields, max_height, filter=False):
+    def __init__(self, forest, ruleset, deffields, max_height, rule_filter, use_bp):
         self.forest = forest
         self.ruleset = ruleset
         self.max_height = max_height
         self.deffields = deffields
-        self.filter = filter
+        self.filter = rule_filter
+        self.use_bp = True if use_bp is not None else False
 
         if self.filter:
             self.all_lhss = set()
@@ -55,8 +56,9 @@ class PatternMatching(object):
                 else:
                     # add lexical translation hyperedges
                     self.add_lex_th(frag[0], node, False)
-                    # add phrase
-                    self.add_lex_th('"%s"' % node.word, node, True)
+                    if self.use_bp:
+                        # add phrase
+                        self.add_lex_th('"%s"' % node.word, node, True)
                 
             else:  # it's a non-terminal node
                 #append the default frag (lhs, rhs, height) = (PU, node, 0)
@@ -64,9 +66,10 @@ class PatternMatching(object):
                 # add non-terminal translation hyperedges
                 self.add_nonter_th(node)
 
-                if not self.filter:
+                if self.use_bp:
                     # add phrase
                     self.add_lex_th('"%s"' % node.surface, node, True)
+
         if self.filter:
             return self.all_lhss
         else:
@@ -146,7 +149,7 @@ class PatternMatching(object):
             if len(edge.subs) >= 5: # this guy has too many children! it cannot be matched!
                 deflhs = "%s(%s)" % (node.label, " ".join(sub.label for sub in edge.subs))
                 defrhs = edge.subs
-                defheight = 2
+                defheight = 1
                 basefrags = [(deflhs, defrhs, defheight)]
             else:
                 for (id, sub) in enumerate(edge.subs):
@@ -157,8 +160,7 @@ class PatternMatching(object):
 
             # for each frag add translation hyperedges
             for extfrag in basefrags:
-                print extfrag
-                extlhs, extrhs, extheight = extfrag
+                (extlhs, extrhs, extheight) = extfrag
                 # add frags
                 if extheight <= self.max_height - 1:
                     node.frags.append(extfrag)

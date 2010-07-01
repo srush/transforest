@@ -218,7 +218,7 @@ if __name__ == "__main__":
     flags.DEFINE_boolean("profile", False, "profiling")
     flags.DEFINE_integer("kbest", 1, "kbest output", short_name="k")
     flags.DEFINE_boolean("forest", False, "dump +LM forest")
-    flags.DEFINE_boolean("futurecost", False, "precompute future cost")
+    flags.DEFINE_boolean("futurecost", True, "precompute future cost")
 
     argv = FLAGS(sys.argv)
 

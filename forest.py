@@ -54,7 +54,7 @@ base_weights = Vector("lm1=2 gt_prob=1 plhs=1 text-length=1")
 
 flags.DEFINE_integer("first", None, "first N forests only")
 convert_forest = False 
-flags.DEFINE_float("lmratio", 1, "language model weight multiplier")
+flags.DEFINE_float("lmratio", 0.8, "language model weight multiplier")
 
 class Forest(object):
     ''' a collection of nodes '''
@@ -195,7 +195,6 @@ class Forest(object):
            and read the last line as the gold tree -- TODO: optional!
            and there is an empty line at the end
         '''
-
         if first is None: # N.B.: must be here, not in the param line (after program initializes)
             first = FLAGS.first
             
@@ -531,8 +530,7 @@ if __name__ == "__main__":
     flags.DEFINE_float("threshold", None, "threshold/margin")
 
     flags.DEFINE_string("rulefilter", None, "filter ruleset")
-    flags.DEFINE_integer("max_height", 4, "maximum height of lhs for pattern-matching")
-
+    flags.DEFINE_integer("max_height", 3, "maximum height of lhs for pattern-matching")
 
     flags.DEFINE_float("hope", 0, "hope weight")
     flags.DEFINE_boolean("mert", True, "output mert-friendly info (<hyp><cost)")
@@ -548,7 +546,7 @@ if __name__ == "__main__":
 
     reffiles = [open(f) for f in argv[1:]]
 
-    convert_forest = (FLAGS.ruleset is not None or FLAGS.rulefilter is not None )
+    convert_forest = ((FLAGS.ruleset is not None) or (FLAGS.rulefilter is not None) )
   
     if FLAGS.ruleset is not None:
         ruleset = RuleSet(FLAGS.ruleset)
@@ -576,9 +574,9 @@ if __name__ == "__main__":
     
     if FLAGS.rulefilter is not None:
         all_lhss = set()
-    
+        
     for i, forest in enumerate(Forest.load("-", is_tforest=(not convert_forest), lm=lm), 1):
- 
+
         if not convert_forest:  # translation forest
             if not FLAGS.infinite:
                 if FLAGS.k is None:
@@ -652,7 +650,8 @@ if __name__ == "__main__":
         elif FLAGS.rulefilter is not None:
             # filter rule set
             stime = time.time()
-            pm = PatternMatching(forest, {}, '', FLAGS.max_height, True)
+            print >> logs, "start rule filter ..." 
+            pm = PatternMatching(forest, {}, '', FLAGS.max_height, True, FLAGS.phrase)
             all_lhss |= pm.convert()
             etime = time.time()
             totalfiltertime += (etime - stime)
@@ -663,7 +662,7 @@ if __name__ == "__main__":
             # default fields
             deffields = "gt_prob=-50 proot=-50 prhs=-20 plhs=-20 lexpef=-10 lexpfe=-10 count1=0 count2_3=0 count4=0 prhs_var=-20 plhs_var=-20 ghkm_num=0 bp_num=0 def_num=1"
             # inside replace
-            pm = PatternMatching(forest, ruleset, deffields, False)
+            pm = PatternMatching(forest, ruleset, deffields, FLAGS.max_height, False, FLAGS.phrase)
             forest = pm.convert()
             forest.compute_size()
             forest.refs = [f.readline().strip() for f in reffiles]
