@@ -650,7 +650,7 @@ if __name__ == "__main__":
         elif FLAGS.rulefilter is not None:
             # filter rule set
             stime = time.time()
-            print >> logs, "start rule filter ..." 
+            # print >> logs, "start rule filter ..." 
             pm = PatternMatching(forest, {}, '', FLAGS.max_height, True, FLAGS.phrase)
             all_lhss |= pm.convert()
             etime = time.time()

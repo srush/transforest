@@ -59,6 +59,13 @@ class Rule(object):
     def is_bp(self):
         '''am i bilingual phrase rule?'''
         return self.lhs.count("(") == 0
+
+    def __hash__(self):
+       return hash((self.lhs, tuple(self.rhs)))
+
+    def __eq__(self, other):
+       return self.lhs==other.lhs and self.rhs==other.rhs
+
     
 class RuleSet(defaultdict):
     ''' map from lhs to a list of Rule '''
@@ -68,8 +75,28 @@ class RuleSet(defaultdict):
         defaultdict.__init__(self, list) # N.B. superclass
         self.ruleid = 0
         print >> logs, "reading rules from %s ..." % rulefilename
-        self.add_rulefromfile(rulefilename)
+
+        ## YY new switch
+        if isinstance(rulefilename, str):
+           self.add_rulefromfile(rulefilename)
+        else: # list/iterator   
+           self.from_strlist(rulefilename)
         
+    # YYnew
+    def from_strlist(self, lst):
+        otime = time.time()
+        bad = 0
+        for i, line in enumerate(lst, 1):
+            rule = Rule.parse(line)
+            if rule is not None:
+                self.add_rule(rule)
+            else:
+                bad += 1
+            if i % 100000 == 0:
+                print >> logs, "%d rules read (%d BAD)..." % (i, bad) 
+        print >> logs, "\ntotal %d rules (%d BAD) read in %d secs" % (i, bad, time.time() - otime)
+
+    #YYnote: this can change to just use from_strlist
     def add_rulefromfile(self, rulefilename):
         otime = time.time()
         bad = 0

@@ -458,7 +458,7 @@ if __name__ == "__main__":
     argv = FLAGS(sys.argv)
 
     for i, line in enumerate(sys.stdin):
-        t = Tree.parse(line.strip(), lower=False)
+        t = Tree.parse(line.strip(), lower=False, trunc=False)
         if len(t) <= FLAGS.max_len:
             if FLAGS.toforest:
                 print_forest(t, tid=i)
