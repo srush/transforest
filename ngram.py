@@ -48,6 +48,22 @@ class Ngram(object):
             score += self.ngram.wordprob(t[i], t[i - self.order + 1: i])
         return -score   # negative logprob
 
+    def hm_word_prob(self, s):
+        ## traditional interface (for debugging), although i can use pq()
+        news = s # "<s> " * (self.order - 1) + s + " </s>"
+        t = self.words2indices(news)
+        news = news.split()
+        score = 0
+        for j in range(0, self.order - 1):
+            score += self.ngram.wordprob(t[j], t[0:j])
+            print >> logs, "-------------P(%s | %s)" \
+                  % (news[j], ' '.join(news[0:j])) 
+        for i in range(self.order - 1, len(t)):
+            score += self.ngram.wordprob(t[i], t[i - self.order + 1: i])
+            print >> logs, "-------------P(%s | %s)" \
+                  % (news[i], ' '.join(news[i - self.order + 1:i]))
+        return score   # negative logprob
+
     def word_prob_bystr(self, s, his):
         ## traditional interface (for debugging), although i can use pq()
         ns = self.word2index(s)

@@ -35,13 +35,15 @@ class CYKDecoder(object):
             print >> logs, '<sent No="%d">' % i
             print >> logs, "<Chinese>%s</Chinese>" % " ".join(forest.cased_sent)
 
-        for k, (sc, trans, fv, _) in enumerate(forest.root.hypvec, 1):
+        for k, (sc, trans, fv) in enumerate(forest.root.hypvec, 1):
             if mert:
                 print >> logs, "<score>%.3lf</score>" % sc
                 print >> logs, "<hyp>%s</hyp>" % trans
                 print >> logs, "<cost>%s</cost>" % fv
+                #HM: lm test
+                # print >> logs, "lm score confirmation: %.3lf" % lm.hm_word_prob(trans) 
 
-            hyp_bleu = forest.bleu.rescore((hyp))
+            hyp_bleu = forest.bleu.rescore((trans))
             print >> logs, "k=%d\tscore=%.4lf\tbleu+1=%.4lf\tlenratio=%.2lf\t%s" % \
                   (k, sc, hyp_bleu, forest.bleu.ratio(), fv)
 
@@ -56,7 +58,7 @@ class CYKDecoder(object):
             for sub in hedge.subs:
                 if not hasattr(sub, 'hypvec'):
                     self.translate(sub, b)
-        # create cube
+        # create cubew
         cands = self.init_cube(cur_node)
         heapq.heapify(cands)
         # gen kbest
@@ -185,7 +187,7 @@ if __name__ == "__main__":
 
     flags.DEFINE_integer("beam", 100, "beam size", short_name="b")
     flags.DEFINE_integer("debuglevel", 0, "debug level")
-    flags.DEFINE_boolean("mert", True, "output mert-friendly info (<hyp><cost>)")
+    flags.DEFINE_boolean("mert", False, "output mert-friendly info (<hyp><cost>)")
     flags.DEFINE_boolean("cube", True, "using cube pruning to speedup")
     flags.DEFINE_integer("kbest", 1, "kbest output", short_name="k")
     flags.DEFINE_integer("ratio", 3, "the maximum items (pop from PQ): ratio*b", short_name="r")
@@ -220,7 +222,11 @@ if __name__ == "__main__":
         print trans
         if FLAGS.kbest > 1:
             decoder.output_kbest(forest, i, FLAGS.mert)
-       
+        else:
+            hyp_bleu = forest.bleu.rescore((trans))
+            print >> logs, "k=1 tscore=%.4lf\tbleu+1=%.4lf\tlenratio=%.2lf\t%s" % \
+                  (score, hyp_bleu, forest.bleu.ratio(), fv)
+
         tot_score += score
         #forest.bleu.rescore((trans))
         #tot_bleu += forest.bleu
