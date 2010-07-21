@@ -19,7 +19,7 @@ cat short1_parse | ../tree.py --toforest >short1_pforest
   cat short1_rules_count2 | ../ruleextraction/rulefilter.py 50  >short1_rules_count2_rhs50
  
   2.4) convert a parse forest into a translation forest. NOTE -w won't be used 
-  cat short1_pforest | ../forest.py -r short1_rules_count2_rhs50 --max_height 3 -w "gt_prob=-1" 1>short1_tforest
+  cat short1_pforest | ../forest.py -r short1_rules_count2_rhs50 --max_height 3 -w "gt_prob=-1" ref* 1>short1_tforest
 
 3) prune a translation forest
 cat short1_tforest | ../prune.py --lm lm.3.sri  -r10 -w config.ini >short1_tforest_p10

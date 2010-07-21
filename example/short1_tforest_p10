@@ -4,118 +4,122 @@ the government will never involve in the search for conspiracy . "
 the government will never involve in the search for conspiracy . "
 the government will never involve in the search for conspiracy . "
 the government will never involve in the search for conspiracy . "
-12	101
+16	101
 1	 NP [0-1]	10 ||| 
-	"a" "government" ||| 228 NP(NN("政府")) -> "a" "government" ||| gt_prob=-11.2175 lm1=-4.71604 plhs=-5.54807 text-length=2 rule-num=1
-	"administration" ||| 232 NP(NN("政府")) -> "administration" ||| gt_prob=-10.8084 lm1=-3.24727 plhs=-5.13903 text-length=1 rule-num=1
-	"a" "government" ||| 506 NP(NN("政府")) -> "a" "government" ||| gt_prob=-11.2175 lm1=-4.71604 plhs=-5.54807 text-length=2 rule-num=1
-	"administration" ||| 510 NP(NN("政府")) -> "administration" ||| gt_prob=-10.8084 lm1=-3.24727 plhs=-5.13903 text-length=1 rule-num=1
-	"a" "government" ||| 600 NP(NN("政府")) -> "a" "government" ||| gt_prob=-11.2175 lm1=-4.71604 plhs=-5.54807 text-length=2 rule-num=1
-	"administration" ||| 604 NP(NN("政府")) -> "administration" ||| gt_prob=-10.8084 lm1=-3.24727 plhs=-5.13903 text-length=1 rule-num=1
-	"a" "government" ||| 878 NP(NN("政府")) -> "a" "government" ||| gt_prob=-11.2175 lm1=-4.71604 plhs=-5.54807 text-length=2 rule-num=1
-	"administration" ||| 882 NP(NN("政府")) -> "administration" ||| gt_prob=-10.8084 lm1=-3.24727 plhs=-5.13903 text-length=1 rule-num=1
-	"a" "government" ||| 1156 NP(NN("政府")) -> "a" "government" ||| gt_prob=-11.2175 lm1=-4.71604 plhs=-5.54807 text-length=2 rule-num=1
-	"administration" ||| 1160 NP(NN("政府")) -> "administration" ||| gt_prob=-10.8084 lm1=-3.24727 plhs=-5.13903 text-length=1 rule-num=1
-8	 NP [5-6]	20 ||| 
-	"a" "conspiracy" ||| 62 NP(NN("阴谋")) -> "a" "conspiracy" ||| gt_prob=-12.6146 lm1=-7.25283 plhs=-1.88179 text-length=2 rule-num=1
-	"a" "plot" ||| 63 NP(NN("阴谋")) -> "a" "plot" ||| gt_prob=-13.6706 lm1=-6.89733 plhs=-2.93784 text-length=2 rule-num=1
-	"conspiracy" ||| 65 NP(NN("阴谋")) -> "conspiracy" ||| gt_prob=-12.659 lm1=-4.77751 plhs=-1.92624 text-length=1 rule-num=1
-	"plot" ||| 70 NP(NN("阴谋")) -> "plot" ||| gt_prob=-12.9168 lm1=-4.42202 plhs=-2.18407 text-length=1 rule-num=1
-	"a" "conspiracy" ||| 340 NP(NN("阴谋")) -> "a" "conspiracy" ||| gt_prob=-12.6146 lm1=-7.25283 plhs=-1.88179 text-length=2 rule-num=1
-	"a" "plot" ||| 341 NP(NN("阴谋")) -> "a" "plot" ||| gt_prob=-13.6706 lm1=-6.89733 plhs=-2.93784 text-length=2 rule-num=1
-	"conspiracy" ||| 343 NP(NN("阴谋")) -> "conspiracy" ||| gt_prob=-12.659 lm1=-4.77751 plhs=-1.92624 text-length=1 rule-num=1
-	"plot" ||| 348 NP(NN("阴谋")) -> "plot" ||| gt_prob=-12.9168 lm1=-4.42202 plhs=-2.18407 text-length=1 rule-num=1
-	"a" "conspiracy" ||| 579 NP(NN("阴谋")) -> "a" "conspiracy" ||| gt_prob=-12.6146 lm1=-7.25283 plhs=-1.88179 text-length=2 rule-num=1
-	"a" "plot" ||| 580 NP(NN("阴谋")) -> "a" "plot" ||| gt_prob=-13.6706 lm1=-6.89733 plhs=-2.93784 text-length=2 rule-num=1
-	"conspiracy" ||| 582 NP(NN("阴谋")) -> "conspiracy" ||| gt_prob=-12.659 lm1=-4.77751 plhs=-1.92624 text-length=1 rule-num=1
-	"plot" ||| 587 NP(NN("阴谋")) -> "plot" ||| gt_prob=-12.9168 lm1=-4.42202 plhs=-2.18407 text-length=1 rule-num=1
-	"a" "conspiracy" ||| 857 NP(NN("阴谋")) -> "a" "conspiracy" ||| gt_prob=-12.6146 lm1=-7.25283 plhs=-1.88179 text-length=2 rule-num=1
-	"a" "plot" ||| 858 NP(NN("阴谋")) -> "a" "plot" ||| gt_prob=-13.6706 lm1=-6.89733 plhs=-2.93784 text-length=2 rule-num=1
-	"conspiracy" ||| 860 NP(NN("阴谋")) -> "conspiracy" ||| gt_prob=-12.659 lm1=-4.77751 plhs=-1.92624 text-length=1 rule-num=1
-	"plot" ||| 865 NP(NN("阴谋")) -> "plot" ||| gt_prob=-12.9168 lm1=-4.42202 plhs=-2.18407 text-length=1 rule-num=1
-	"a" "conspiracy" ||| 1135 NP(NN("阴谋")) -> "a" "conspiracy" ||| gt_prob=-12.6146 lm1=-7.25283 plhs=-1.88179 text-length=2 rule-num=1
-	"a" "plot" ||| 1136 NP(NN("阴谋")) -> "a" "plot" ||| gt_prob=-13.6706 lm1=-6.89733 plhs=-2.93784 text-length=2 rule-num=1
-	"conspiracy" ||| 1138 NP(NN("阴谋")) -> "conspiracy" ||| gt_prob=-12.659 lm1=-4.77751 plhs=-1.92624 text-length=1 rule-num=1
-	"plot" ||| 1143 NP(NN("阴谋")) -> "plot" ||| gt_prob=-12.9168 lm1=-4.42202 plhs=-2.18407 text-length=1 rule-num=1
-10	 IP [4-6]	5 ||| 
-	8 ||| 192 IP(VP(VV("寻找") NP)) -> x0 ||| gt_prob=-12.8522 lm1=0 plhs=0 text-length=0 rule-num=1
-	8 ||| 470 IP(VP(VV("寻找") NP)) -> x0 ||| gt_prob=-12.8522 lm1=0 plhs=0 text-length=0 rule-num=1
-	8 ||| 705 IP(VP(VV("寻找") NP)) -> x0 ||| gt_prob=-12.8522 lm1=0 plhs=0 text-length=0 rule-num=1
-	8 ||| 983 IP(VP(VV("寻找") NP)) -> x0 ||| gt_prob=-12.8522 lm1=0 plhs=0 text-length=0 rule-num=1
-	8 ||| 1261 IP(VP(VV("寻找") NP)) -> x0 ||| gt_prob=-12.8522 lm1=0 plhs=0 text-length=0 rule-num=1
+	"&" ||| 114 NP(NN("政府")) -> "&" ||| gt_prob=-15.0526 lm1=-4.2763 plhs=-8.98206 text-length=1 rule-num=1
+	"'" ||| 115 NP(NN("政府")) -> "'" ||| gt_prob=-14.6012 lm1=-2.66756 plhs=-8.69438 text-length=1 rule-num=1
+	"a" "government" "of" ||| 120 NP(NN("政府")) -> "a" "government" "of" ||| gt_prob=-15.7068 lm1=-6.41472 plhs=-9.38752 text-length=3 rule-num=1
+	"a" "government" ||| 121 NP(NN("政府")) -> "a" "government" ||| gt_prob=-11.2175 lm1=-4.71604 plhs=-5.54807 text-length=2 rule-num=1
+	"a" "new" "government" ||| 122 NP(NN("政府")) -> "a" "new" "government" ||| gt_prob=-15.7068 lm1=-4.60497 plhs=-9.38752 text-length=3 rule-num=1
+	"about" "the" "government" ||| 124 NP(NN("政府")) -> "about" "the" "government" ||| gt_prob=-15.7068 lm1=-5.97692 plhs=-9.38752 text-length=3 rule-num=1
+	"administration" "'s" ||| 133 NP(NN("政府")) -> "administration" "'s" ||| gt_prob=-13.5528 lm1=-5.53933 plhs=-7.88345 text-length=2 rule-num=1
+	"administration" "of" ||| 134 NP(NN("政府")) -> "administration" "of" ||| gt_prob=-15.0526 lm1=-4.1194 plhs=-8.98206 text-length=2 rule-num=1
+	"administration" ||| 135 NP(NN("政府")) -> "administration" ||| gt_prob=-10.8084 lm1=-3.24727 plhs=-5.13903 text-length=1 rule-num=1
+	"administrations" ||| 136 NP(NN("政府")) -> "administrations" ||| gt_prob=-12.4179 lm1=-4.50984 plhs=-6.74847 text-length=1 rule-num=1
+3	 ADVP [1-2]	6 ||| 
+	"always" ||| 0 ADVP(AD("从来")) -> "always" ||| gt_prob=-10.3231 lm1=-3.89155 plhs=-1.64453 text-length=1 rule-num=1
+	"has" "always" "been" ||| 2 ADVP(AD("从来")) -> "has" "always" "been" ||| gt_prob=-11.7094 lm1=-5.67836 plhs=-3.03082 text-length=3 rule-num=1
+	"has" "never" "been" ||| 4 ADVP(AD("从来")) -> "has" "never" "been" ||| gt_prob=-12.0459 lm1=-7.04601 plhs=-3.3673 text-length=3 rule-num=1
+	"have" "never" "been" ||| 6 ADVP(AD("从来")) -> "have" "never" "been" ||| gt_prob=-12.5256 lm1=-7.57663 plhs=-3.59044 text-length=3 rule-num=1
+	"it" "has" "never" "been" ||| 7 ADVP(AD("从来")) -> "it" "has" "never" "been" ||| gt_prob=-13.4553 lm1=-9.04091 plhs=-4.28359 text-length=4 rule-num=1
+	"never" ||| 8 ADVP(AD("从来")) -> "never" ||| gt_prob=-9.61225 lm1=-3.76039 plhs=-0.933682 text-length=1 rule-num=1
+4	 VV [2-3]	5 ||| 
+	"'" ||| 249 VV("不会") -> "'" ||| gt_prob=-12.1617 lm1=-2.66756 plhs=-5.54648 text-length=1 rule-num=1
+	"absence" "of" ||| 256 VV("不会") -> "absence" "of" ||| gt_prob=-14.2167 lm1=-5.12339 plhs=-7.05056 text-length=2 rule-num=1
+	"against" ||| 260 VV("不会") -> "against" ||| gt_prob=-11.1008 lm1=-3.10952 plhs=-4.48561 text-length=1 rule-num=1
+	"away" ||| 270 VV("不会") -> "away" ||| gt_prob=-12.5671 lm1=-3.45017 plhs=-5.95194 text-length=1 rule-num=1
+	"be" ||| 271 VV("不会") -> "be" ||| gt_prob=-12.1617 lm1=-3.03246 plhs=-5.54648 text-length=1 rule-num=1
+6	 VV [4-5]	6 ||| 
+	"are" "looking" "for" ||| 266 VV("寻找") -> "are" "looking" "for" ||| gt_prob=-13.63 lm1=-5.40576 plhs=-5.42348 text-length=3 rule-num=1
+	"are" "you" "looking" "for" ||| 268 VV("寻找") -> "are" "you" "looking" "for" ||| gt_prob=-14.2167 lm1=-10.9766 plhs=-5.82895 text-length=4 rule-num=1
+	"find" ||| 274 VV("寻找") -> "find" ||| gt_prob=-10.7213 lm1=-3.84329 plhs=-2.88451 text-length=1 rule-num=1
+	"finding" ||| 275 VV("寻找") -> "finding" ||| gt_prob=-10.9916 lm1=-4.42202 plhs=-3.1548 text-length=1 rule-num=1
+	"for" ||| 276 VV("寻找") -> "for" ||| gt_prob=-12.413 lm1=-1.99434 plhs=-4.57618 text-length=1 rule-num=1
+	"have" "been" "hunting" "for" ||| 277 VV("寻找") -> "have" "been" "hunting" "for" ||| gt_prob=-14.2167 lm1=-10.1476 plhs=-5.82895 text-length=4 rule-num=1
+8	 NP [5-6]	10 ||| 
+	"a" "'" "conspiracy" ||| 117 NP(NN("阴谋")) -> "a" "'" "conspiracy" ||| gt_prob=-15.7068 lm1=-9.96095 plhs=-4.32413 text-length=3 rule-num=1
+	"a" "conspiracy" ||| 119 NP(NN("阴谋")) -> "a" "conspiracy" ||| gt_prob=-12.6146 lm1=-7.25283 plhs=-1.88179 text-length=2 rule-num=1
+	"a" "plot" ||| 123 NP(NN("阴谋")) -> "a" "plot" ||| gt_prob=-13.6706 lm1=-6.89733 plhs=-2.93784 text-length=2 rule-num=1
+	"conspiracies" ||| 137 NP(NN("阴谋")) -> "conspiracies" ||| gt_prob=-13.8041 lm1=-4.77751 plhs=-3.07137 text-length=1 rule-num=1
+	"conspiracy" ||| 138 NP(NN("阴谋")) -> "conspiracy" ||| gt_prob=-12.659 lm1=-4.77751 plhs=-1.92624 text-length=1 rule-num=1
+	"conspiratorial" ||| 139 NP(NN("阴谋")) -> "conspiratorial" ||| gt_prob=-15.0526 lm1=-4.77751 plhs=-3.91867 text-length=1 rule-num=1
+	"conspire" ||| 140 NP(NN("阴谋")) -> "conspire" ||| gt_prob=-15.7068 lm1=-4.77751 plhs=-4.32413 text-length=1 rule-num=1
+	"conspiring" ||| 141 NP(NN("阴谋")) -> "conspiring" ||| gt_prob=-14.6012 lm1=-4.62027 plhs=-3.63099 text-length=1 rule-num=1
+	"his" "plot" ||| 142 NP(NN("阴谋")) -> "his" "plot" ||| gt_prob=-15.7068 lm1=-7.50314 plhs=-4.32413 text-length=2 rule-num=1
+	"plot" ||| 143 NP(NN("阴谋")) -> "plot" ||| gt_prob=-12.9168 lm1=-4.42202 plhs=-2.18407 text-length=1 rule-num=1
+10	 IP [4-6]	2 ||| 
+	6 "'" 8 ||| 70 IP(VP(VV NP)) -> x0 "'" x1 ||| gt_prob=-9.94609 lm1=-2.66756 plhs=-6.58612 text-length=1 rule-num=1
+	8 ||| 71 IP(VP(VV("寻找") NP)) -> x0 ||| gt_prob=-12.8522 lm1=0 plhs=0 text-length=0 rule-num=1
+11	 DEC [6-7]	2 ||| 
+	"'s" ||| 30 DEC("的") -> "'s" ||| gt_prob=-4.902 lm1=-2.4644 plhs=-4.87993 text-length=1 rule-num=1
+	"about" ||| 33 DEC("的") -> "about" ||| gt_prob=-6.13313 lm1=-2.9049 plhs=-6.11106 text-length=1 rule-num=1
 12	 CP [4-7]	5 ||| 
-	10 ||| 102 CP(IP DEC("的")) -> x0 ||| gt_prob=-1.48927 lm1=0 plhs=-0.000502501 text-length=0 rule-num=1
-	10 ||| 380 CP(IP DEC("的")) -> x0 ||| gt_prob=-1.48927 lm1=0 plhs=-0.000502501 text-length=0 rule-num=1
-	10 ||| 747 CP(IP DEC("的")) -> x0 ||| gt_prob=-1.48927 lm1=0 plhs=-0.000502501 text-length=0 rule-num=1
-	10 ||| 1025 CP(IP DEC("的")) -> x0 ||| gt_prob=-1.48927 lm1=0 plhs=-0.000502501 text-length=0 rule-num=1
-	10 ||| 1303 CP(IP DEC("的")) -> x0 ||| gt_prob=-1.48927 lm1=0 plhs=-0.000502501 text-length=0 rule-num=1
-15	 NP [4-8]	5 ||| 
-	12 ||| 274 NP(CP NP(NN("行为"))) -> x0 ||| gt_prob=-10.7461 lm1=0 plhs=-0.0649579 text-length=0 rule-num=1
-	12 ||| 552 NP(CP NP(NN("行为"))) -> x0 ||| gt_prob=-10.7461 lm1=0 plhs=-0.0649579 text-length=0 rule-num=1
-	12 ||| 830 NP(CP NP(NN("行为"))) -> x0 ||| gt_prob=-10.7461 lm1=0 plhs=-0.0649579 text-length=0 rule-num=1
-	12 ||| 1108 NP(CP NP(NN("行为"))) -> x0 ||| gt_prob=-10.7461 lm1=0 plhs=-0.0649579 text-length=0 rule-num=1
-	12 ||| 1386 NP(CP NP(NN("行为"))) -> x0 ||| gt_prob=-10.7461 lm1=0 plhs=-0.0649579 text-length=0 rule-num=1
-16	 VP [3-8]	15 ||| 
-	"taking" "part" "in" 15 "in" ||| 239 VP(VV("参与") NP) -> "taking" "part" "in" x0 "in" ||| gt_prob=-13.8244 lm1=-6.02352 plhs=-4.38515 text-length=4 rule-num=1
-	"to" "participate" "in" 15 "in" ||| 240 VP(VV("参与") NP) -> "to" "participate" "in" x0 "in" ||| gt_prob=-13.8244 lm1=-5.84322 plhs=-4.38515 text-length=4 rule-num=1
-	15 ||| 241 VP(VV("参与") NP) -> x0 ||| gt_prob=-9.39786 lm1=0 plhs=-0.147424 text-length=0 rule-num=1
-	"taking" "part" "in" 15 "in" ||| 517 VP(VV("参与") NP) -> "taking" "part" "in" x0 "in" ||| gt_prob=-13.8244 lm1=-6.02352 plhs=-4.38515 text-length=4 rule-num=1
-	"to" "participate" "in" 15 "in" ||| 518 VP(VV("参与") NP) -> "to" "participate" "in" x0 "in" ||| gt_prob=-13.8244 lm1=-5.84322 plhs=-4.38515 text-length=4 rule-num=1
-	15 ||| 519 VP(VV("参与") NP) -> x0 ||| gt_prob=-9.39786 lm1=0 plhs=-0.147424 text-length=0 rule-num=1
-	"taking" "part" "in" 15 "in" ||| 776 VP(VV("参与") NP) -> "taking" "part" "in" x0 "in" ||| gt_prob=-13.8244 lm1=-6.02352 plhs=-4.38515 text-length=4 rule-num=1
-	"to" "participate" "in" 15 "in" ||| 777 VP(VV("参与") NP) -> "to" "participate" "in" x0 "in" ||| gt_prob=-13.8244 lm1=-5.84322 plhs=-4.38515 text-length=4 rule-num=1
-	15 ||| 778 VP(VV("参与") NP) -> x0 ||| gt_prob=-9.39786 lm1=0 plhs=-0.147424 text-length=0 rule-num=1
-	"taking" "part" "in" 15 "in" ||| 1054 VP(VV("参与") NP) -> "taking" "part" "in" x0 "in" ||| gt_prob=-13.8244 lm1=-6.02352 plhs=-4.38515 text-length=4 rule-num=1
-	"to" "participate" "in" 15 "in" ||| 1055 VP(VV("参与") NP) -> "to" "participate" "in" x0 "in" ||| gt_prob=-13.8244 lm1=-5.84322 plhs=-4.38515 text-length=4 rule-num=1
-	15 ||| 1056 VP(VV("参与") NP) -> x0 ||| gt_prob=-9.39786 lm1=0 plhs=-0.147424 text-length=0 rule-num=1
-	"taking" "part" "in" 15 "in" ||| 1332 VP(VV("参与") NP) -> "taking" "part" "in" x0 "in" ||| gt_prob=-13.8244 lm1=-6.02352 plhs=-4.38515 text-length=4 rule-num=1
-	"to" "participate" "in" 15 "in" ||| 1333 VP(VV("参与") NP) -> "to" "participate" "in" x0 "in" ||| gt_prob=-13.8244 lm1=-5.84322 plhs=-4.38515 text-length=4 rule-num=1
-	15 ||| 1334 VP(VV("参与") NP) -> x0 ||| gt_prob=-9.39786 lm1=0 plhs=-0.147424 text-length=0 rule-num=1
-17	 VP [2-8]	5 ||| 
-	16 ||| 56 VP(VV("不会") VP) -> x0 ||| gt_prob=-7.92764 lm1=0 plhs=-0.00661706 text-length=0 rule-num=1
-	16 ||| 334 VP(VV("不会") VP) -> x0 ||| gt_prob=-7.92764 lm1=0 plhs=-0.00661706 text-length=0 rule-num=1
-	16 ||| 762 VP(VV("不会") VP) -> x0 ||| gt_prob=-7.92764 lm1=0 plhs=-0.00661706 text-length=0 rule-num=1
-	16 ||| 1040 VP(VV("不会") VP) -> x0 ||| gt_prob=-7.92764 lm1=0 plhs=-0.00661706 text-length=0 rule-num=1
-	16 ||| 1318 VP(VV("不会") VP) -> x0 ||| gt_prob=-7.92764 lm1=0 plhs=-0.00661706 text-length=0 rule-num=1
-18	 VP [1-8]	10 ||| 
-	17 ||| 277 VP(ADVP(AD("从来")) VP) -> x0 ||| gt_prob=-11.9308 lm1=0 plhs=0 text-length=0 rule-num=1
-	17 ||| 555 VP(ADVP(AD("从来")) VP) -> x0 ||| gt_prob=-11.9308 lm1=0 plhs=0 text-length=0 rule-num=1
-	17 ||| 726 VP(ADVP(AD("从来")) VP) -> x0 ||| gt_prob=-11.9308 lm1=0 plhs=0 text-length=0 rule-num=1
-	17 ||| 1004 VP(ADVP(AD("从来")) VP) -> x0 ||| gt_prob=-11.9308 lm1=0 plhs=0 text-length=0 rule-num=1
-	17 ||| 1282 VP(ADVP(AD("从来")) VP) -> x0 ||| gt_prob=-11.9308 lm1=0 plhs=0 text-length=0 rule-num=1
-	"never" 16 ||| 91 VP(ADVP(AD("从来")) VP(VV("不会") VP)) -> "never" x0 ||| gt_prob=-15.0008 lm1=-3.76039 plhs=-0.405465 text-length=1 rule-num=1
-	"never" 16 ||| 369 VP(ADVP(AD("从来")) VP(VV("不会") VP)) -> "never" x0 ||| gt_prob=-15.0008 lm1=-3.76039 plhs=-0.405465 text-length=1 rule-num=1
-	"never" 16 ||| 704 VP(ADVP(AD("从来")) VP(VV("不会") VP)) -> "never" x0 ||| gt_prob=-15.0008 lm1=-3.76039 plhs=-0.405465 text-length=1 rule-num=1
-	"never" 16 ||| 982 VP(ADVP(AD("从来")) VP(VV("不会") VP)) -> "never" x0 ||| gt_prob=-15.0008 lm1=-3.76039 plhs=-0.405465 text-length=1 rule-num=1
-	"never" 16 ||| 1260 VP(ADVP(AD("从来")) VP(VV("不会") VP)) -> "never" x0 ||| gt_prob=-15.0008 lm1=-3.76039 plhs=-0.405465 text-length=1 rule-num=1
-19	 PU [8-9]	5 ||| 
-	"." ||| 117 PU(".") -> "." ||| gt_prob=-1.08731 lm1=-1.55504 plhs=-0.0152747 text-length=1 rule-num=1
-	"." ||| 395 PU(".") -> "." ||| gt_prob=-1.08731 lm1=-1.55504 plhs=-0.0152747 text-length=1 rule-num=1
-	"." ||| 802 PU(".") -> "." ||| gt_prob=-1.08731 lm1=-1.55504 plhs=-0.0152747 text-length=1 rule-num=1
-	"." ||| 1080 PU(".") -> "." ||| gt_prob=-1.08731 lm1=-1.55504 plhs=-0.0152747 text-length=1 rule-num=1
-	"." ||| 1358 PU(".") -> "." ||| gt_prob=-1.08731 lm1=-1.55504 plhs=-0.0152747 text-length=1 rule-num=1
-20	 PU [9-10]	5 ||| 
-	""" ||| 22 PU(""") -> """ ||| gt_prob=-2.84545 lm1=-2.14515 plhs=-0.00802933 text-length=1 rule-num=1
-	""" ||| 300 PU(""") -> """ ||| gt_prob=-2.84545 lm1=-2.14515 plhs=-0.00802933 text-length=1 rule-num=1
-	""" ||| 568 PU(""") -> """ ||| gt_prob=-2.84545 lm1=-2.14515 plhs=-0.00802933 text-length=1 rule-num=1
-	""" ||| 846 PU(""") -> """ ||| gt_prob=-2.84545 lm1=-2.14515 plhs=-0.00802933 text-length=1 rule-num=1
-	""" ||| 1124 PU(""") -> """ ||| gt_prob=-2.84545 lm1=-2.14515 plhs=-0.00802933 text-length=1 rule-num=1
-21	 IP [0-10]	15 ||| 
-	1 "," 18 19 20 ||| 210 IP(NP VP PU PU) -> x0 "," x1 x2 x3 ||| gt_prob=-11.5792 lm1=-1.43552 plhs=-3.17972 text-length=1 rule-num=1
-	1 "," 18 19 20 ||| 488 IP(NP VP PU PU) -> x0 "," x1 x2 x3 ||| gt_prob=-11.5792 lm1=-1.43552 plhs=-3.17972 text-length=1 rule-num=1
-	1 "," 18 19 20 ||| 644 IP(NP VP PU PU) -> x0 "," x1 x2 x3 ||| gt_prob=-11.5792 lm1=-1.43552 plhs=-3.17972 text-length=1 rule-num=1
-	1 "," 18 19 20 ||| 922 IP(NP VP PU PU) -> x0 "," x1 x2 x3 ||| gt_prob=-11.5792 lm1=-1.43552 plhs=-3.17972 text-length=1 rule-num=1
-	1 "," 18 19 20 ||| 1200 IP(NP VP PU PU) -> x0 "," x1 x2 x3 ||| gt_prob=-11.5792 lm1=-1.43552 plhs=-3.17972 text-length=1 rule-num=1
-	1 18 19 ||| 110 IP(NP VP PU PU(""")) -> x0 x1 x2 ||| gt_prob=-10.3438 lm1=0 plhs=-0.85392 text-length=0 rule-num=1
-	1 18 19 ||| 388 IP(NP VP PU PU(""")) -> x0 x1 x2 ||| gt_prob=-10.3438 lm1=0 plhs=-0.85392 text-length=0 rule-num=1
-	1 18 19 ||| 691 IP(NP VP PU PU(""")) -> x0 x1 x2 ||| gt_prob=-10.3438 lm1=0 plhs=-0.85392 text-length=0 rule-num=1
-	1 18 19 ||| 969 IP(NP VP PU PU(""")) -> x0 x1 x2 ||| gt_prob=-10.3438 lm1=0 plhs=-0.85392 text-length=0 rule-num=1
-	1 18 19 ||| 1247 IP(NP VP PU PU(""")) -> x0 x1 x2 ||| gt_prob=-10.3438 lm1=0 plhs=-0.85392 text-length=0 rule-num=1
-	1 18 20 ||| 54 IP(NP VP PU(".") PU) -> x0 x1 x2 ||| gt_prob=-12.1591 lm1=0 plhs=-0.451985 text-length=0 rule-num=1
-	1 18 20 ||| 332 IP(NP VP PU(".") PU) -> x0 x1 x2 ||| gt_prob=-12.1591 lm1=0 plhs=-0.451985 text-length=0 rule-num=1
-	1 18 20 ||| 793 IP(NP VP PU(".") PU) -> x0 x1 x2 ||| gt_prob=-12.1591 lm1=0 plhs=-0.451985 text-length=0 rule-num=1
-	1 18 20 ||| 1071 IP(NP VP PU(".") PU) -> x0 x1 x2 ||| gt_prob=-12.1591 lm1=0 plhs=-0.451985 text-length=0 rule-num=1
-	1 18 20 ||| 1349 IP(NP VP PU(".") PU) -> x0 x1 x2 ||| gt_prob=-12.1591 lm1=0 plhs=-0.451985 text-length=0 rule-num=1
+	10 11 ||| 22 CP(IP DEC) -> x0 x1 ||| gt_prob=-4.34974 lm1=0 plhs=-2.457 text-length=0 rule-num=1
+	10 "," ||| 10 CP(IP DEC("的")) -> x0 "," ||| gt_prob=-10.9232 lm1=-1.43552 plhs=-9.43444 text-length=1 rule-num=1
+	10 "." ||| 11 CP(IP DEC("的")) -> x0 "." ||| gt_prob=-9.97875 lm1=-1.55504 plhs=-8.48998 text-length=1 rule-num=1
+	10 ||| 13 CP(IP DEC("的")) -> x0 ||| gt_prob=-1.48927 lm1=0 plhs=-0.000502501 text-length=0 rule-num=1
+	6 11 8 ||| 27 CP(IP(VP(VV NP)) DEC) -> x0 x2 x1 ||| gt_prob=-7.30844 lm1=0 plhs=-0.0953102 text-length=0 rule-num=1
+15	 NP [4-8]	3 ||| 
+	"a" 12 "act" ||| 99 NP(CP NP(NN("行为"))) -> "a" x0 "act" ||| gt_prob=-14.1406 lm1=-6.59358 plhs=-3.45947 text-length=2 rule-num=1
+	"an" 12 "action" ||| 100 NP(CP NP(NN("行为"))) -> "an" x0 "action" ||| gt_prob=-15.7068 lm1=-6.43718 plhs=-4.37576 text-length=2 rule-num=1
+	12 ||| 101 NP(CP NP(NN("行为"))) -> x0 ||| gt_prob=-10.7461 lm1=0 plhs=-0.0649579 text-length=0 rule-num=1
+16	 VP [3-8]	6 ||| 
+	"participate" "in" 15 "in" ||| 238 VP(VV("参与") NP) -> "participate" "in" x0 "in" ||| gt_prob=-13.4124 lm1=-5.86998 plhs=-4.162 text-length=3 rule-num=1
+	"participate" "in" 15 "of" "income" "in" ||| 239 VP(VV("参与") NP) -> "participate" "in" x0 "of" "income" "in" ||| gt_prob=-15.0008 lm1=-11.2003 plhs=-5.07829 text-length=5 rule-num=1
+	"take" "part" "in" 15 "in" ||| 240 VP(VV("参与") NP) -> "take" "part" "in" x0 "in" ||| gt_prob=-15.0008 lm1=-6.43179 plhs=-5.07829 text-length=4 rule-num=1
+	"taking" "part" "in" 15 "in" ||| 241 VP(VV("参与") NP) -> "taking" "part" "in" x0 "in" ||| gt_prob=-13.8244 lm1=-6.02352 plhs=-4.38515 text-length=4 rule-num=1
+	"to" "participate" "in" 15 "in" ||| 242 VP(VV("参与") NP) -> "to" "participate" "in" x0 "in" ||| gt_prob=-13.8244 lm1=-5.84322 plhs=-4.38515 text-length=4 rule-num=1
+	15 ||| 245 VP(VV("参与") NP) -> x0 ||| gt_prob=-9.39786 lm1=0 plhs=-0.147424 text-length=0 rule-num=1
+17	 VP [2-8]	2 ||| 
+	"not" "be" "a" 16 "one" ||| 246 VP(VV("不会") VP) -> "not" "be" "a" x0 "one" ||| gt_prob=-15.0008 lm1=-8.73513 plhs=-6.4077 text-length=4 rule-num=1
+	16 ||| 247 VP(VV("不会") VP) -> x0 ||| gt_prob=-7.92764 lm1=0 plhs=-0.00661706 text-length=0 rule-num=1
+18	 VP [1-8]	8 ||| 
+	3 """ 17 ||| 178 VP(ADVP VP) -> x0 """ x1 ||| gt_prob=-11.1932 lm1=-2.14515 plhs=-8.20062 text-length=1 rule-num=1
+	3 "'" 17 ||| 179 VP(ADVP VP) -> x0 "'" x1 ||| gt_prob=-10.603 lm1=-2.66756 plhs=-7.61042 text-length=1 rule-num=1
+	3 "'s" 17 ||| 184 VP(ADVP VP) -> x0 "'s" x1 ||| gt_prob=-10.4167 lm1=-2.4644 plhs=-7.42409 text-length=1 rule-num=1
+	4 "," 3 "," 16 ||| 168 VP(ADVP VP(VV VP)) -> x1 "," x0 "," x2 ||| gt_prob=-11.9308 lm1=-2.87104 plhs=-4.4117 text-length=2 rule-num=1
+	4 "," 3 "of" "all" "," 16 ||| 169 VP(ADVP VP(VV VP)) -> x1 "," x0 "of" "all" "," x2 ||| gt_prob=-13.8244 lm1=-7.06489 plhs=-6.11644 text-length=4 rule-num=1
+	4 "all" "the" 3 16 ||| 172 VP(ADVP VP(VV VP)) -> x1 "all" "the" x0 x2 ||| gt_prob=-12.1315 lm1=-3.97555 plhs=-4.61237 text-length=2 rule-num=1
+	17 ||| 189 VP(ADVP(AD("从来")) VP) -> x0 ||| gt_prob=-11.9308 lm1=0 plhs=0 text-length=0 rule-num=1
+	"never" 16 ||| 188 VP(ADVP(AD("从来")) VP(VV("不会") VP)) -> "never" x0 ||| gt_prob=-15.0008 lm1=-3.76039 plhs=-0.405465 text-length=1 rule-num=1
+19	 PU [8-9]	6 ||| 
+	"," "and" ||| 154 PU(".") -> "," "and" ||| gt_prob=-7.51193 lm1=-2.36812 plhs=-6.4399 text-length=2 rule-num=1
+	"," "as" "well" "as" ||| 155 PU(".") -> "," "as" "well" "as" ||| gt_prob=-12.8495 lm1=-3.68019 plhs=-11.7774 text-length=4 rule-num=1
+	"," ||| 157 PU(".") -> "," ||| gt_prob=-5.38055 lm1=-1.43552 plhs=-4.30852 text-length=1 rule-num=1
+	"." """ "he" "added" "." ||| 159 PU(".") -> "." """ "he" "added" "." ||| gt_prob=-13.4091 lm1=-8.41089 plhs=-12.3371 text-length=5 rule-num=1
+	"." """ "he" "said" "." ||| 160 PU(".") -> "." """ "he" "said" "." ||| gt_prob=-12.5982 lm1=-7.34644 plhs=-11.5261 text-length=5 rule-num=1
+	"." ||| 163 PU(".") -> "." ||| gt_prob=-1.08731 lm1=-1.55504 plhs=-0.0152747 text-length=1 rule-num=1
+20	 PU [9-10]	7 ||| 
+	""" """ ||| 144 PU(""") -> """ """ ||| gt_prob=-8.08852 lm1=-4.51847 plhs=-5.2511 text-length=2 rule-num=1
+	""" "(" """ ||| 145 PU(""") -> """ "(" """ ||| gt_prob=-12.1563 lm1=-7.10634 plhs=-9.31891 text-length=3 rule-num=1
+	""" "," """ ||| 146 PU(""") -> """ "," """ ||| gt_prob=-11.4632 lm1=-4.60409 plhs=-8.62576 text-length=3 rule-num=1
+	""" "and" """ ||| 150 PU(""") -> """ "and" """ ||| gt_prob=-11.4281 lm1=-4.14101 plhs=-8.59067 text-length=3 rule-num=1
+	""" "and" "that" """ ||| 151 PU(""") -> """ "and" "that" """ ||| gt_prob=-12.5982 lm1=-7.23005 plhs=-9.76074 text-length=4 rule-num=1
+	""" "and" "the" """ ||| 152 PU(""") -> """ "and" "the" """ ||| gt_prob=-13.4091 lm1=-5.30976 plhs=-10.5717 text-length=4 rule-num=1
+	""" ||| 153 PU(""") -> """ ||| gt_prob=-2.84545 lm1=-2.14515 plhs=-0.00802933 text-length=1 rule-num=1
+21	 IP [0-10]	22 ||| 
+	""" 1 18 "," 20 "he" "said" 19 ||| 46 IP(NP VP PU PU) -> """ x0 x1 "," x3 "he" "said" x2 ||| gt_prob=-14.8413 lm1=-8.49136 plhs=-5.70545 text-length=4 rule-num=1
+	""" 1 18 19 20 ||| 47 IP(NP VP PU PU) -> """ x0 x1 x2 x3 ||| gt_prob=-12.1591 lm1=-2.14515 plhs=-3.75954 text-length=1 rule-num=1
+	"and" "food" "," 1 18 19 20 ||| 48 IP(NP VP PU PU) -> "and" "food" "," x0 x1 x2 x3 ||| gt_prob=-12.7187 lm1=-6.79874 plhs=-4.31915 text-length=3 rule-num=1
+	"and" 1 18 19 20 ||| 49 IP(NP VP PU PU) -> "and" x0 x1 x2 x3 ||| gt_prob=-14.8413 lm1=-1.62453 plhs=-5.70545 text-length=1 rule-num=1
+	"and" 1 18 20 19 ||| 50 IP(NP VP PU PU) -> "and" x0 x1 x3 x2 ||| gt_prob=-14.8413 lm1=-1.62453 plhs=-5.70545 text-length=1 rule-num=1
+	"electrical" 1 "by" 18 19 20 ||| 51 IP(NP VP PU PU) -> "electrical" x0 "by" x1 x2 x3 ||| gt_prob=-14.065 lm1=-6.16032 plhs=-5.29998 text-length=2 rule-num=1
+	"the" 1 18 19 20 ||| 52 IP(NP VP PU PU) -> "the" x0 x1 x2 x3 ||| gt_prob=-14.8413 lm1=-1.83889 plhs=-5.70545 text-length=1 rule-num=1
+	1 "," 18 19 20 ||| 53 IP(NP VP PU PU) -> x0 "," x1 x2 x3 ||| gt_prob=-11.5792 lm1=-1.43552 plhs=-3.17972 text-length=1 rule-num=1
+	1 "by" 18 19 20 ||| 54 IP(NP VP PU PU) -> x0 "by" x1 x2 x3 ||| gt_prob=-13.0064 lm1=-2.21447 plhs=-4.60684 text-length=1 rule-num=1
+	1 "committee" 18 "sites" 19 20 ||| 55 IP(NP VP PU PU) -> x0 "committee" x1 "sites" x2 x3 ||| gt_prob=-14.8413 lm1=-7.01372 plhs=-5.70545 text-length=2 rule-num=1
+	""" 1 18 19 ||| 39 IP(NP VP PU PU(""")) -> """ x0 x1 x2 ||| gt_prob=-14.8413 lm1=-2.14515 plhs=-4.61512 text-length=1 rule-num=1
+	""" 18 1 19 ||| 40 IP(NP VP PU PU(""")) -> """ x1 x0 x2 ||| gt_prob=-14.065 lm1=-2.14515 plhs=-4.20966 text-length=1 rule-num=1
+	1 "," 18 19 ||| 41 IP(NP VP PU PU(""")) -> x0 "," x1 x2 ||| gt_prob=-12.7187 lm1=-1.43552 plhs=-3.22883 text-length=1 rule-num=1
+	1 "also" 18 19 ||| 42 IP(NP VP PU PU(""")) -> x0 "also" x1 x2 ||| gt_prob=-14.8413 lm1=-2.79811 plhs=-4.61512 text-length=1 rule-num=1
+	1 18 19 "”" ||| 43 IP(NP VP PU PU(""")) -> x0 x1 x2 "”" ||| gt_prob=-14.8413 lm1=-4.77751 plhs=-4.61512 text-length=1 rule-num=1
+	1 18 19 ||| 44 IP(NP VP PU PU(""")) -> x0 x1 x2 ||| gt_prob=-10.3438 lm1=0 plhs=-0.85392 text-length=0 rule-num=1
+	18 1 19 ||| 45 IP(NP VP PU PU(""")) -> x1 x0 x2 ||| gt_prob=-12.4002 lm1=0 plhs=-2.91037 text-length=0 rule-num=1
+	"and" "no" 1 18 20 ||| 58 IP(NP VP PU(".") PU) -> "and" "no" x0 x1 x2 ||| gt_prob=-14.8413 lm1=-4.81587 plhs=-2.3979 text-length=2 rule-num=1
+	"huiluo" 1 18 20 ||| 59 IP(NP VP PU(".") PU) -> "huiluo" x0 x1 x2 ||| gt_prob=-14.8413 lm1=-4.77751 plhs=-2.3979 text-length=1 rule-num=1
+	1 18 20 ||| 60 IP(NP VP PU(".") PU) -> x0 x1 x2 ||| gt_prob=-12.1591 lm1=0 plhs=-0.451985 text-length=0 rule-num=1
+	1 18 "." "”" ||| 56 IP(NP VP PU(".") PU(""")) -> x0 x1 "." "”" ||| gt_prob=-13.1887 lm1=-7.28328 plhs=-0.955511 text-length=2 rule-num=1
+	1 18 ||| 57 IP(NP VP PU(".") PU(""")) -> x0 x1 ||| gt_prob=-13.0064 lm1=0 plhs=-0.77319 text-length=0 rule-num=1
 22	 TOP [0-10]	1 ||| 
-	21 ||| 1391 TOP(IP) -> x0 ||| gt_prob=-50 lm1=0 plhs=-20 text-length=0 proot=-50 prhs=-20 lexpef=-10 lexpfe=-10 count1=0 count2_3=0 count4=0 plhs_var=-20 prhs_var=-20 ghkm_num=0 def_num=1 bp_num=0 rule-num=1
+	21 ||| 279 TOP(IP) -> x0 ||| gt_prob=-50 lm1=0 plhs=-20 text-length=0 proot=-50 prhs=-20 lexpef=-10 lexpfe=-10 count1=0 count2_3=0 count4=0 plhs_var=-20 prhs_var=-20 ghkm_num=0 def_num=1 bp_num=0 rule-num=1
 
